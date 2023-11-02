@@ -1,5 +1,5 @@
 /* 背景宇宙星光  */
-#universe {
+#universe{
   display: block;
   position: fixed;
   margin: 0;
@@ -13,3 +13,4 @@
   pointer-events: none;
   z-index: -1;
 }
+
