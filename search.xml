@@ -88,16 +88,12 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Iptables </category>
           
       </categories>
       
       
         <tags>
-            
-            <tag> Linux </tag>
             
             <tag> Iptables </tag>
             
@@ -117,16 +113,12 @@
       
       <categories>
           
-          <category> Linux </category>
-          
           <category> Keepalived </category>
           
       </categories>
       
       
         <tags>
-            
-            <tag> Linux </tag>
             
             <tag> Keepalived </tag>
             
@@ -205,9 +197,9 @@
       
         <tags>
             
-            <tag> Linux </tag>
-            
             <tag> MySQL </tag>
+            
+            <tag> Linux </tag>
             
         </tags>
       
