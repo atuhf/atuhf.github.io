@@ -4,9 +4,34 @@
   
     
     <entry>
+      <title>比较LVS、Nginx、HAProxy三者的优缺点</title>
+      <link href="/post/718f4c20.html"/>
+      <url>/post/718f4c20.html</url>
+      
+        <content type="html"><![CDATA[]]></content>
+      
+      
+      <categories>
+          
+          <category> Linux </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Linux </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Windows Server多用户同时登录</title>
-      <link href="/post/undefined.html"/>
-      <url>/post/undefined.html</url>
+      <link href="/post/c40b87d2.html"/>
+      <url>/post/c40b87d2.html</url>
       
         <content type="html"><![CDATA[<h1 id="解决Windows-Server多用户同时登录的问题"><a href="#解决Windows-Server多用户同时登录的问题" class="headerlink" title="解决Windows Server多用户同时登录的问题"></a>解决Windows Server多用户同时登录的问题</h1><h2 id="安装远程桌面服务"><a href="#安装远程桌面服务" class="headerlink" title="安装远程桌面服务"></a>安装远程桌面服务</h2><p>目前情况是Windows server 2016上默认只允许2个用户可以同时登录，多了则不可以登录。</p><p>现在网上教程大多都是直接配置的第二步（配置远程连接数量），其实没有前面这一步骤的话，直接做第二步骤的情况下是不会生效的。</p><ol><li>首先添加角色和功能</li></ol><p><img src="/images/addrole.png"></p><ol start="2"><li>基于角色或基于功能的安装</li></ol><p><img src="/images/addrole1.png"></p><ol start="3"><li>前面的直接下一步就可以了，到这里选择远程桌面服务。在这里我选择了两个，一个是远程桌面会话主机（选择这一个就可以实现多用户，但只有120天的有效期），另一个就是远程桌面授权（这个就是为了后面申请许可证实现永久生效）。</li></ol><p><img src="/images/addrole2.png"></p><p><img src="/images/addrole3.png"></p><p>其他的步骤就下一步的，到最后直接安装就好了，等安装完后是需要重启一下系统的，业务机器的话需要提前跟她们确认一下是否可以重启。</p><h2 id="配置远程连接数量"><a href="#配置远程连接数量" class="headerlink" title="配置远程连接数量"></a>配置远程连接数量</h2><ol><li>使用win键加+R键端口运行框，在框中输入gpedit.msc打开策略编辑器</li></ol><p><img src="/images/gpedit.png"></p><ol start="2"><li>在计算机本地组策略里选择“计算机配置 &gt; 管理模板 &gt; windows组件 &gt; 远程桌面服务 &gt; 远程桌面会话主机 &gt; 连接”。设置“允许用户通过使用远程桌面服务进行远程连接”、“限制连接数量（可根据具体数量设置）”和“将远程桌面服务用户限制到单独的远程桌面”</li></ol><p><img src="/images/connect.png"></p><ol start="3"><li>鼠标右键点击“编辑”，设置“允许用户通过使用远程桌面服务进行远程连接”设置为已启用。</li></ol><p><img src="/images/connect1.png"></p><ol start="4"><li>“限制连接数量”选择已启用，这里的数量根据实际来设置。</li></ol><p><img src="/images/connect2.png"></p><ol start="5"><li>“将远程桌面服务用户限制到单独的远程桌面”选择已启用，或者已禁用，请注意此处已启用和已禁用的区别。本例以勾选“已启用”为例。</li></ol><ul><li>已启用：多个用户同时登录的多用户登录，不能单用户多登录。</li></ul><p>例如：当配置了已启用的话，用户A、用户B、用户C可以分别使用账号A、账号B、账号C同时登录远程桌面服务器，但是不支持用户A、用户B、用户C使用同一个账号同时登录远程桌面服务器。</p><ul><li>已禁用：单个用户可以同时多个登录的多用户登录。</li></ul><p>例如：当配置为已禁用的话，用户A、用户B、用户C可以使用同一个帐号同时登录。</p><p><img src="/images/connect3.png"></p><ol start="6"><li>运行cmd ，输入”gpupdate &#x2F;force”，强制执行本地组策略，重启服务器，整个配置过程完成。</li></ol><h2 id="申请多用户会话授权的license"><a href="#申请多用户会话授权的license" class="headerlink" title="申请多用户会话授权的license"></a>申请多用户会话授权的license</h2><ol><li>在 服务器管理器&gt;&gt;桌面桌面服务&gt;&gt;服务器，选择RD授权管理器</li></ol><p><img src="/images/license.png"></p><ol start="2"><li>选择未激活的服务器，鼠标右键选择属性</li></ol><p><img src="/images/license1.png"></p><ol start="3"><li>在属性对话框中，连接方法选择“Web浏览器”，记下对话框中出现的产品ID，在获取服务器许可证时，需在网页上注册此ID。</li></ol><p><img src="/images/license2.png"></p><ol start="4"><li>选择“必需信息”，填写信息后单击“确定”</li></ol><p><img src="/images/license3.png"></p><ol start="5"><li>用下载了的浏览器打开 <a href="https://activate.microsoft.com/">https://activate.microsoft.com</a> ，开始注册并获取服务器许可密码向导</li></ol><p>如果这选择中文的话下一步啥都没有的话，建议还默认选择英文就好了。</p><p><img src="/images/license4.png"></p><ol start="6"><li>输入“产品ID：xxxxx-xxxxx-xxxxx-xxxxx”，填写所需信息后，单击“下一步”确认产品信息无误后再次单击“下一步”</li></ol><p><img src="/images/license5.png"></p><ol start="7"><li>根据页面提示，记录服务器ID。在“需要此时获取客户机许可证吗”中选择”是”</li></ol><p><img src="/images/license6.png"></p><ol start="8"><li>如果没有许可证，在许可证程序选择“企业协议（Enterprise agreement）”，确定信息无误后，单击”下一步”</li></ol><p><img src="/images/license7.png"></p><ol start="9"><li>填写配置信息</li></ol><p>这里产品类型选择 Windows Server 2012 Remote Desktop Services Per User client access license(终端服务客户端访问许可证)<br>选择数量，我这里选择999。注册码可以在网上找的，在”注册号码”中输入你从微软获得的那个七位数（如果自己没有许可证，那么就输入6565792,4954438,6879321或者5296992），我这里输入的6565792有效。</p><p><img src="/images/license8.png"></p><ol start="10"><li>记录许可证服务器ID和许可证密钥包ID，然后单击“结束”</li></ol><p><img src="/images/license9.png"></p><h2 id="激活服务器"><a href="#激活服务器" class="headerlink" title="激活服务器"></a>激活服务器</h2><ol><li>登录服务器，打开RD授权管理器选择服务器，单击右键选择“激活服务器”</li></ol><p><img src="/images/activation.png"></p><ol start="2"><li>在激活服务器向导中单击“下一步 ”</li></ol><p><img src="/images/activation1.png"></p><ol start="3"><li>在连接方法处选择Web浏览器，然后单击“下一步”</li></ol><p><img src="/images/activation2.png"></p><ol start="4"><li>输入许可服务器ID，然后单击“下一步”</li></ol><p>许可服务器ID为前面步骤7中获取的ID</p><p><img src="/images/activation3.png"></p><ol start="5"><li>选择立即启动许可安装向导，单击“下一步”</li></ol><p><img src="/images/activation4.png"></p><ol start="6"><li>输入许可密钥包ID，单击“下一步”</li></ol><p>密钥包ID为步骤10中获取的密钥包ID</p><p><img src="/images/activation5.png"></p><h2 id="配置远程桌面会话主机授权服务器（云服务器）"><a href="#配置远程桌面会话主机授权服务器（云服务器）" class="headerlink" title="配置远程桌面会话主机授权服务器（云服务器）"></a>配置远程桌面会话主机授权服务器（云服务器）</h2><ol><li>首先登录Windows云服务器</li><li>在操作系统界面打开 服务器管理器 &gt;&gt; 工具 &gt;&gt; Terminal Service &gt;&gt; RD授权诊断程序，查看当前服务器的授权状态。</li></ol><p><img src="/images/Authorize.png"></p><ol start="3"><li>在运行里输入“gpedit.msc”，打开计算机本地组策略</li></ol><p><img src="/images/gpedit.png"></p><ol start="4"><li>在计算机本地组策略里选择“计算机配置 &gt; 管理模板 &gt; windows组件 &gt; 远程桌面服务 &gt; 远程桌面会话主机 &gt; 授权”，找到 “使用指定的远程桌面许可服务器”和“设置远程桌面授权模式”</li></ol><p><img src="/images/Authorize1.png"></p><ol start="5"><li>设置“使用指定的远程桌面许可证服务器”为启用，并在“要使用的许可证服务器”中，设置当前服务器的私有IP或者主机名</li></ol><p><img src="/images/Authorize2.png"></p><ol start="6"><li>启用“设置远程桌面授权模式”，设置授权模式为“按用户”</li></ol><p><img src="/images/Authorize3.png"></p><ol start="7"><li>运行cmd ，输入gpupdate &#x2F;force，强制执行本地组策略，重启服务器，整个配置过程完成。</li></ol>]]></content>
       
