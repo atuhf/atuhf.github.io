@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>利用kubeasz工具 二进制安装k8s高可用集群</title>
+      <link href="/post/e81f2dbc.html"/>
+      <url>/post/e81f2dbc.html</url>
+      
+        <content type="html"><![CDATA[<h1 id="基础环境准备"><a href="#基础环境准备" class="headerlink" title="基础环境准备"></a>基础环境准备</h1><h2 id="集群机器的规划"><a href="#集群机器的规划" class="headerlink" title="集群机器的规划"></a>集群机器的规划</h2><table><thead><tr><th>角色</th><th>节点数量</th><th>节点IP</th><th>描述</th></tr></thead><tbody><tr><td>部署节点</td><td>1</td><td>10.0.0.100</td><td>主要就是运行ansible、ezctl命令，建议用一台单独机器部署</td></tr></tbody></table>]]></content>
+      
+      
+      <categories>
+          
+          <category> kubernetes </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> kubernetes </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Docker限制容器的资源</title>
       <link href="/post/f9fc2b54.html"/>
       <url>/post/f9fc2b54.html</url>
