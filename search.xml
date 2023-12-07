@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>kubernetes 安装coreDNS组件</title>
+      <link href="/post/787eeeb4.html"/>
+      <url>/post/787eeeb4.html</url>
+      
+        <content type="html"><![CDATA[]]></content>
+      
+      
+      <categories>
+          
+          <category> kubernetes </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> kubernetes </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>利用kubeasz工具 二进制安装k8s高可用集群</title>
       <link href="/post/e81f2dbc.html"/>
       <url>/post/e81f2dbc.html</url>
