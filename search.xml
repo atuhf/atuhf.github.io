@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>kubernetes-Pod的常见状态</title>
+      <link href="/post/58a285.html"/>
+      <url>/post/58a285.html</url>
+      
+        <content type="html"><![CDATA[<h1 id="Pod的常见状态"><a href="#Pod的常见状态" class="headerlink" title="Pod的常见状态"></a>Pod的常见状态</h1><p><strong>Pod调度的流程</strong></p><p><img src="/images/pod-scheduling-process.png"></p><p><strong>Pod常见状态效果图</strong></p><p><img src="/images/pod-status.png"></p><p><strong>常见的状态</strong></p><blockquote><p>Unschedulable：# Pod不能被调度，kube-scheduler没有匹配到合适的node节点</p><p>PodScheduled: # pod正处于调度中，在kube-scheduler刚开始调度的时候，还没有将pod分配到指定的node，在筛选出合适的节点后就会更新etcd数据，将pod分配到指定的node</p><p>Pending: # 正在创建Pod但是Pod中的容器还没有全部被创建完成，当前处于此状态的Pod应该检查Pod依赖的存储是否有权限挂载等</p><p>Failed: # Pod中有容器启动失败而导致pod工作异常</p><p>Unknown: # 由于某种原因无法获得pod的当前状态，通常是由于与pod所在的node节点通信错误</p><p>Initialized: # 所有pod中的初始化容器已经完成了</p><p>ImagePullBackOff: # Pod所在的node节点下载镜像失败</p><p>Running: # Pod内部的容器已经被创建并且启动</p><p>Ready: # 表示pod中的容器已经可以提供访问服务</p><p>Error: # pod启动过程中发生了错误</p><p>NodeLost：# Pod所在的节点失联</p><p>Waiting：# Pod等待启动</p><p>Terminating: # Pod正在被销毁</p><p>CrashLoopBackOff: # pod，但是kubelet正在将它重启</p><p>InvalidImageName: #node节点无法解析镜像名称导致的镜像无法下载</p><p>ImageInspectError: # 无法校验镜像，镜像不完整导致</p><p>ErrImageNeverPull: # 策略禁止拉取镜像，镜像中心权限是私有等</p><p>RegistryUnavailable: # 镜像服务器不可用，网络原因或harbor宕机</p><p>ErrImagePull: # 镜像拉取出错，超时或下载被强制终止</p><p>CreateContainerConfigError: # 不能创建kubelet使用的容器配置</p><p>CreateContainerError: # 创建容器失败</p><p>RunContainerError: # pod运行失败，容器中没有初始化PID为1的守护进程等</p><p>ContainersNotInitialized: # pod没有初始化完毕</p><p>ContainersNotReady: # pod没有准备完毕</p><p>ContainerCreating: # pod正在创建中</p><p>DockerDaemonNotReady: # node节点decker服务没有启动</p><p>NetworkPluginNotReady: # 网络插件没有启动</p></blockquote>]]></content>
+      
+      
+      <categories>
+          
+          <category> kubernetes </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> kubernetes </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>kubernetes-HPA控制器</title>
       <link href="/post/d7e3eb60.html"/>
       <url>/post/d7e3eb60.html</url>
