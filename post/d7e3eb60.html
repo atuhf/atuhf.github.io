@@ -1,0 +1,374 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>kubernetes-HPA控制器 | G.のblog</title><meta name="author" content="G."><meta name="copyright" content="G."><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="HPA控制器 部署 metrics-serverMetrics Server 是 Kubernetes 内置的容器资源指标来源。 Metrics Server 从node节点上的 Kubelet 收集资源指标,并通过Metrics API在 Kubernetes apiserver 中公开指标数据,以供Horizontal Pod Autoscaler和Vertical Pod Autoscale">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubernetes-HPA控制器">
+<meta property="og:url" content="https://atuhf.github.io/post/d7e3eb60.html">
+<meta property="og:site_name" content="G.のblog">
+<meta property="og:description" content="HPA控制器 部署 metrics-serverMetrics Server 是 Kubernetes 内置的容器资源指标来源。 Metrics Server 从node节点上的 Kubelet 收集资源指标,并通过Metrics API在 Kubernetes apiserver 中公开指标数据,以供Horizontal Pod Autoscaler和Vertical Pod Autoscale">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://atuhf.github.io/img/kubernetes.png">
+<meta property="article:published_time" content="2022-07-09T02:49:36.000Z">
+<meta property="article:modified_time" content="2023-12-11T09:29:16.692Z">
+<meta property="article:author" content="G.">
+<meta property="article:tag" content="kubernetes">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://atuhf.github.io/img/kubernetes.png"><link rel="shortcut icon" href="/img/touxiang.png"><link rel="canonical" href="https://atuhf.github.io/post/d7e3eb60.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
+  noticeOutdate: {"limitDay":365,"position":"top","messagePrev":"It has been","messageNext":"days since the last update, the content of the article may be outdated."},
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: G.","link":"链接: ","source":"来源: G.のblog","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'kubernetes-HPA控制器',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2023-12-11 17:29:16'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css"><style type="text/css">#toggle-sidebar {left:100px}</style><link rel="stylesheet" href="/css/universe.css"><link rel="stylesheet" href="/css/rightMenu.css"><!-- hexo injector head_end start --><link rel="stylesheet" href="https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/clock.min.css" /><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load',() => { preloader.endLoading() })
+
+  if (true) {
+    document.addEventListener('pjax:send', () => { preloader.initLoading() })
+    document.addEventListener('pjax:complete', () => { preloader.endLoading() })
+  }
+})()</script><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/touxiang.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">38</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('/img/background.png')"><nav id="nav"><span id="blog-info"><a href="/" title="G.のblog"><span class="site-name">G.のblog</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">kubernetes-HPA控制器<a class="post-edit-link" href="null_posts/kubernetes-HPA控制器.md" title="编辑" target="_blank"><i class="fas fa-pencil-alt"></i></a></h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="fa-fw post-meta-icon far fa-calendar-alt"></i><span class="post-meta-label">发表于</span><time datetime="2022-07-09T02:49:36.000Z" title="发表于 2022-07-09 10:49:36">2022-07-09</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/kubernetes/">kubernetes</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span id="" data-flag-title="kubernetes-HPA控制器"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="twikoo_visitors"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="HPA控制器"><a href="#HPA控制器" class="headerlink" title="HPA控制器"></a>HPA控制器</h1><p><img src="/images/HPA1.png"></p>
+<h2 id="部署-metrics-server"><a href="#部署-metrics-server" class="headerlink" title="部署 metrics-server"></a>部署 metrics-server</h2><p>Metrics Server 是 Kubernetes 内置的容器资源指标来源。</p>
+<p>Metrics Server 从node节点上的 Kubelet 收集资源指标,并通过Metrics API在 Kubernetes apiserver 中公开指标数据,以供Horizontal Pod Autoscaler和Vertical Pod Autoscaler使用,也可以通过访问kubectl top node&#x2F;pod 查看指标数据。</p>
+<p><img src="/images/HPA2.png"></p>
+<p>下载地址：<br><a target="_blank" rel="noopener" href="https://github.com/kubernetes-sigs/metrics-server/releases">github地址</a></p>
+<p><img src="/images/metrics-server.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># wget https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.6.1/components.yaml</span></span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># mv components.yaml metrics-server-v0.6.1.yaml</span></span><br><span class="line"><span class="comment">## 修改资源定义的文件里面的镜像位置</span></span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># vim metrics-server-v0.6.1.yaml</span></span><br><span class="line"><span class="comment">#image: k8s.gcr.io/metrics-server/metrics-server:v0.6.1</span></span><br><span class="line">image: registry.cn-hangzhou.aliyuncs.com/liangxiaohui/metrics-server:0.6.1</span><br><span class="line"></span><br><span class="line"><span class="comment">## 部署</span></span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl apply -f metrics-server-v0.6.1.yaml</span></span><br><span class="line">serviceaccount/metrics-server created</span><br><span class="line">clusterrole.rbac.authorization.k8s.io/system:aggregated-metrics-reader created</span><br><span class="line">clusterrole.rbac.authorization.k8s.io/system:metrics-server created</span><br><span class="line">rolebinding.rbac.authorization.k8s.io/metrics-server-auth-reader created</span><br><span class="line">clusterrolebinding.rbac.authorization.k8s.io/metrics-server:system:auth-delegator created</span><br><span class="line">clusterrolebinding.rbac.authorization.k8s.io/system:metrics-server created</span><br><span class="line">service/metrics-server created</span><br><span class="line">deployment.apps/metrics-server created</span><br><span class="line">apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created</span><br><span class="line"></span><br><span class="line"><span class="comment">## 验证metrics-server是否起来，并验证是否可以采集到pods和nodes节点的资源</span></span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl get pods -n kube-system </span></span><br><span class="line">NAME                                       READY   STATUS    RESTARTS       AGE</span><br><span class="line">calico-kube-controllers-6767cc9c5f-nlf4p   1/1     Running   3 (142m ago)   3d18h</span><br><span class="line">calico-node-9tnmr                          1/1     Running   3 (142m ago)   3d18h</span><br><span class="line">calico-node-cn4zv                          1/1     Running   3 (142m ago)   3d18h</span><br><span class="line">calico-node-jvz68                          1/1     Running   3 (142m ago)   3d18h</span><br><span class="line">calico-node-kc6c6                          1/1     Running   3 (142m ago)   3d18h</span><br><span class="line">calico-node-wh2nb                          1/1     Running   3 (142m ago)   3d18h</span><br><span class="line">coredns-65dc99c6d5-ndjwc                   1/1     Running   3 (142m ago)   3d17h</span><br><span class="line">metrics-server-775f8fc6b4-t72w7            1/1     Running   0              110s</span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl top pods -A</span></span><br><span class="line">NAMESPACE     NAME                                                  CPU(cores)   MEMORY(bytes)   </span><br><span class="line">default       net-test1                                             0m           1Mi             </span><br><span class="line">default       net-test2                                             0m           1Mi             </span><br><span class="line">kube-system   calico-kube-controllers-6767cc9c5f-nlf4p              2m           22Mi            </span><br><span class="line">kube-system   calico-node-9tnmr                                     16m          96Mi            </span><br><span class="line">kube-system   calico-node-cn4zv                                     23m          99Mi            </span><br><span class="line">kube-system   calico-node-jvz68                                     22m          100Mi           </span><br><span class="line">kube-system   calico-node-kc6c6                                     21m          108Mi           </span><br><span class="line">kube-system   calico-node-wh2nb                                     18m          99Mi            </span><br><span class="line">kube-system   coredns-65dc99c6d5-ndjwc                              1m           15Mi            </span><br><span class="line">kube-system   metrics-server-775f8fc6b4-t72w7                       3m           21Mi            </span><br><span class="line">myserver      myserver-myapp-app1-deployment-764d7db7c-g8sb8        2m           161Mi           </span><br><span class="line">myserver      myserver-myapp-frontend-deployment-67c4dc8d46-wtftp   0m           61Mi            </span><br><span class="line">nfs           nfs-client-provisioner-5bcb9fbd9-mbftt                2m           8Mi             </span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl top nodes</span></span><br><span class="line">NAME         CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%   </span><br><span class="line">10.0.0.100   62m          1%     1014Mi          13%       </span><br><span class="line">10.0.0.101   57m          2%     926Mi           25%       </span><br><span class="line">10.0.0.102   51m          2%     916Mi           25%       </span><br><span class="line">10.0.0.107   47m          1%     815Mi           10%       </span><br><span class="line">10.0.0.108   51m          1%     712Mi           9%</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/HPA3.png"></p>
+<h2 id="HPA自动伸缩"><a href="#HPA自动伸缩" class="headerlink" title="HPA自动伸缩"></a>HPA自动伸缩</h2><p>HorizontalPodAutoscaler（简称HPA）自动更新工作负载资源（例如Deployment或者StatefulSet），基于pod资源利用率横向调整pod副本数量。目的是自动扩缩工作负载以满足需求。</p>
+<p>根据当前的pod的负载，动态调整pod的副本数，业务高峰自动扩容pod的副本数以尽快响应pod的请求。</p>
+<p>水平伸缩意味着对增加的负载的响应也是部署更多的Pods，这个与垂直（vertical）伸缩又不同，垂直伸缩的意思就是将更多的资源（例如内存或CPU）分配给已经工作负载运行的Pod。</p>
+<p>HorizontalPodAutoscaler是会根据工作的负载资源来伸缩的，例如负载减少，并且现有的Pod数量大于设置的最小值时，这时HorizontalPodAutoscaler就会按照设置的工作负载资源（Deployment、StatefulSet或其他的资源）来进行缩减。</p>
+<p><strong>与其相关的动态伸缩控制器类型：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">垂直pod自动缩放器（VPA）：基于pod的资源利用率，调整对单个pod的最大资源限制，注意不能与HPA同时使用；</span><br><span class="line">集群伸缩（Cluster Autoscale，CA）：基于集群中node资源分配情况，动态的伸缩node节点，从而保证集群有充足的CPU和内存资源来创建pod；</span><br></pre></td></tr></table></figure>
+
+<p><strong>HPA控制器的简介：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Horizontal Pod Autoscaling (HPA)控制器，根据预定义好的阈值及pod当前的资源利用率，自动控制在k8s集群中运行的pod数量(自动弹性水平自动伸缩).</span><br></pre></td></tr></table></figure>
+
+<p><strong>HPA的重要参数：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 使用 kube-controller-manager --help | grep &lt;options&gt; 进行查看</span></span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kube-controller-manager --help | grep &quot;horizontal-pod-autoscaler&quot;</span></span><br><span class="line">      --horizontal-pod-autoscaler-cpu-initialization-period duration   The period after pod start when CPU samples might be skipped. (default 5m0s)</span><br><span class="line">      --horizontal-pod-autoscaler-downscale-stabilization duration     The period <span class="keyword">for</span> <span class="built_in">which</span> autoscaler will look backwards and not scale down below any recommendation it made during that period. (default 5m0s)</span><br><span class="line">      --horizontal-pod-autoscaler-initial-readiness-delay duration     The period after pod start during <span class="built_in">which</span> readiness changes will be treated as initial readiness. (default 30s)</span><br><span class="line">      --horizontal-pod-autoscaler-sync-period duration                 The period <span class="keyword">for</span> syncing the number of pods <span class="keyword">in</span> horizontal pod autoscaler. (default 15s)</span><br><span class="line">      --horizontal-pod-autoscaler-tolerance <span class="built_in">float</span>                      The minimum change (from 1.0) <span class="keyword">in</span> the desired-to-actual metrics ratio <span class="keyword">for</span> the horizontal pod autoscaler to consider scaling. (default 0.1)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 默认每隔15s(可以通过–horizontal-pod-autoscaler-sync-period修改)查询metrics的资源使用情况。</span></span><br><span class="line">--horizontal-pod-autoscaler-sync-period </span><br><span class="line"></span><br><span class="line"><span class="comment"># 缩容间隔周期，默认5分钟。</span></span><br><span class="line">--horizontal-pod-autoscaler-downscale-stabilization</span><br><span class="line"></span><br><span class="line"><span class="comment"># HPA控制器同步pod副本数的间隔周期</span></span><br><span class="line">--horizontal-pod-autoscaler-sync-period</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化延迟时间，在此时间内 pod的CPU 资源指标将不会生效，默认为5分钟。</span></span><br><span class="line">--horizontal-pod-autoscaler-cpu-initialization-period</span><br><span class="line"></span><br><span class="line"><span class="comment"># 用于设置 pod 准备时间， 在此时间内的 pod 统统被认为未就绪及不采集数据,默认为30秒。</span></span><br><span class="line">--horizontal-pod-autoscaler-initial-readiness-delay</span><br><span class="line"></span><br><span class="line"><span class="comment"># HPA控制器能容忍的数据差异(浮点数，默认为0.1)，即新的指标要与当前的阈值差异在0.1或以上, 即要大于1+0.1=1.1，或小于1-0.1=0.9，比如阈值为CPU利用率50%,当前为80%,那么80/50=1.6 &gt; 1.1则会触发扩容，分之会缩容。</span></span><br><span class="line">--horizontal-pod-autoscaler-tolerance</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>即触发条件：avg(CurrentPodsConsumption) &#x2F; Target &gt;1.1 或 &lt;0.9&#x3D;把N个pod的数据相加后根据pod的数量计算出平均数除以阈值,大于1.1就扩容，小于0.9就缩容。</p>
+<p><strong>计算公式：TargetNumOfPods &#x3D; ceil(sum(CurrentPodsCPUUtilization) &#x2F; Target) #ceil是一个向上取整的目的pod整数。</strong></p>
+</blockquote>
+<blockquote>
+<p>在k8s 1.1引入HPA控制器，早期使用Heapster组件采集pod指标数据，在k8s 1.11版本开始使用Metrices Server完成数据采集，然后将采集到的数据通过API（Aggregated API，汇总API），例如metrics.k8s.io、custom.metrics.k8s.io、external.metrics.k8s.io，然后再把数据提供给HPA控制器进行查询，以实现基于某个资源利用率对pod进行扩缩容的目的。</p>
+</blockquote>
+<h3 id="根据CPU利用率伸缩"><a href="#根据CPU利用率伸缩" class="headerlink" title="根据CPU利用率伸缩"></a>根据CPU利用率伸缩</h3><p>创建deployment</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># cat deploy-zhang-test-nginx.yaml</span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: nginx</span><br><span class="line">  name: nginx</span><br><span class="line">spec:</span><br><span class="line">  replicas: 2</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: nginx</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: nginx</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - image: nginx:1.18.0</span><br><span class="line">        name: nginx</span><br><span class="line">        imagePullPolicy: IfNotPresent</span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl apply -f deploy-zhang-test-nginx.yaml</span></span><br><span class="line">deployment.apps/nginx created</span><br></pre></td></tr></table></figure>
+
+<p>创建HPA</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl autoscale deployment nginx --max=4 --min=2 --cpu-percent=80 --dry-run=client -o yaml &gt; zhang-test-nginx-hpa.yaml</span></span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># cat zhang-test-nginx-hpa.yaml </span></span><br><span class="line">apiVersion: autoscaling/v1</span><br><span class="line">kind: HorizontalPodAutoscaler</span><br><span class="line">metadata:</span><br><span class="line">  creationTimestamp: null</span><br><span class="line">  name: nginx</span><br><span class="line">spec:</span><br><span class="line">  maxReplicas: 4</span><br><span class="line">  minReplicas: 2</span><br><span class="line">  scaleTargetRef:</span><br><span class="line">    apiVersion: apps/v1</span><br><span class="line">    kind: Deployment</span><br><span class="line">    name: nginx</span><br><span class="line">  targetCPUUtilizationPercentage: 80</span><br><span class="line">status:</span><br><span class="line">  currentReplicas: 0</span><br><span class="line">  desiredReplicas: 0</span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl apply -f zhang-test-nginx-hpa.yaml</span></span><br></pre></td></tr></table></figure>
+
+<p>想要看到HPA的TARGETS值就必须要满足两个条件：</p>
+<ol>
+<li>安装好metric server</li>
+<li>为pod设置好资源限制</li>
+</ol>
+<p>这里我们修改一些刚刚创建的deployment文件来限制一下资源</p>
+<p>添加上resource资源限制</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 这里也可以直接编辑deploy-zhang-test-nginx.yaml加上下面修改的配置</span></span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl edit deployments.apps nginx</span></span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - image: nginx:1.18.0</span><br><span class="line">        imagePullPolicy: IfNotPresent</span><br><span class="line">        name: nginx</span><br><span class="line">        resources:</span><br><span class="line">          limits:</span><br><span class="line">            cpu: 100m</span><br><span class="line">            memory: <span class="string">&quot;200Mi&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>修改完后，会自动创建两个新的pod来替换旧的pod资源限制</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl get pods</span></span><br><span class="line">NAMESPACE     NAME                                                  READY   STATUS    RESTARTS        AGE</span><br><span class="line">default       net-test1                                             1/1     Running   3 (7h15m ago)   3d23h</span><br><span class="line">default       net-test2                                             1/1     Running   3 (7h15m ago)   3d23h</span><br><span class="line">default       nginx-58fd4c7754-sqp95                                1/1     Running   0               8s</span><br><span class="line">default       nginx-58fd4c7754-xh4wx                                1/1     Running   0               10s</span><br></pre></td></tr></table></figure>
+
+<p>暴露deployment端口，创建svc</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl expose deployment nginx --port=80 --target-port=80</span></span><br><span class="line">service/nginx exposed</span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># kubectl get svc</span></span><br><span class="line">NAME         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE</span><br><span class="line">kubernetes   ClusterIP   10.100.0.1       &lt;none&gt;        443/TCP   4d</span><br><span class="line">nginx        ClusterIP   10.100.222.238   &lt;none&gt;        80/TCP    6s</span><br></pre></td></tr></table></figure>
+
+<p>这时我们可以安装一个压力测试的工具来进行压测</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># apt -y install apache2-utils</span></span><br><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/hpa<span class="comment"># ab -n 300000 -c 100 http://10.100.222.238/</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/hpa-abtest.png"></p>
+<p>当容器的cpu达到80%，这时候hpa就会自动水平伸缩来扩容pods，直到扩容到cpu负载均匀到各个pods中，或者hpa扩容到最大的pods数量。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:~<span class="comment"># kubectl get pods</span></span><br><span class="line">NAME                     READY   STATUS    RESTARTS     AGE</span><br><span class="line">net-test1                1/1     Running   3 (8h ago)   4d</span><br><span class="line">net-test2                1/1     Running   3 (8h ago)   4d</span><br><span class="line">nginx-58fd4c7754-m6dg4   1/1     Running   0            88s</span><br><span class="line">nginx-58fd4c7754-sqp95   1/1     Running   0            51m</span><br><span class="line">nginx-58fd4c7754-xh4wx   1/1     Running   0            51m</span><br><span class="line">root@k8s-master1:~<span class="comment"># kubectl top pods</span></span><br><span class="line">NAME                     CPU(cores)   MEMORY(bytes)   </span><br><span class="line">net-test1                0m           1Mi             </span><br><span class="line">net-test2                0m           1Mi             </span><br><span class="line">nginx-58fd4c7754-m6dg4   99m           3Mi             </span><br><span class="line">nginx-58fd4c7754-sqp95   99m          4Mi             </span><br><span class="line">nginx-58fd4c7754-xh4wx   100m         5Mi</span><br></pre></td></tr></table></figure>
+
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://atuhf.github.io/">G.</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://atuhf.github.io/post/d7e3eb60.html">https://atuhf.github.io/post/d7e3eb60.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://atuhf.github.io" target="_blank">G.のblog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/kubernetes/">kubernetes</a></div><div class="post_share"><div class="social-share" data-image="/img/kubernetes.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.png" target="_blank"><img class="post-qr-code-img" src="/img/wechat.png" alt="wechat"/></a><div class="post-qr-code-desc">wechat</div></li><li class="reward-item"><a href="/img/alipay.png" target="_blank"><img class="post-qr-code-img" src="/img/alipay.png" alt="alipay"/></a><div class="post-qr-code-desc">alipay</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-full"><a href="/post/823264f9.html" title="kubernetes资源对象-DaemonSet"><img class="cover" src="/img/kubernetes.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">kubernetes资源对象-DaemonSet</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/post/787eeeb4.html" title="kubernetes 安装coreDNS组件"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-26</div><div class="title">kubernetes 安装coreDNS组件</div></div></a></div><div><a href="/post/e81f2dbc.html" title="利用kubeasz工具 二进制安装k8s高可用集群"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-25</div><div class="title">利用kubeasz工具 二进制安装k8s高可用集群</div></div></a></div><div><a href="/post/9bc16ef7.html" title="kubernetes-ETCD简要说明"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-28</div><div class="title">kubernetes-ETCD简要说明</div></div></a></div><div><a href="/post/305a7887.html" title="kubernetes-etcd-V3数据备份与恢复"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-29</div><div class="title">kubernetes-etcd-V3数据备份与恢复</div></div></a></div><div><a href="/post/9ab01199.html" title="kubernetes网络插件Flannel&#x2F;Calico对比"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-30</div><div class="title">kubernetes网络插件Flannel&#x2F;Calico对比</div></div></a></div><div><a href="/post/24a5cc96.html" title="kubernetes资源对象-Configmap"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-05</div><div class="title">kubernetes资源对象-Configmap</div></div></a></div></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/touxiang.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">G.</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">38</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#HPA%E6%8E%A7%E5%88%B6%E5%99%A8"><span class="toc-number">1.</span> <span class="toc-text">HPA控制器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2-metrics-server"><span class="toc-number">1.1.</span> <span class="toc-text">部署 metrics-server</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#HPA%E8%87%AA%E5%8A%A8%E4%BC%B8%E7%BC%A9"><span class="toc-number">1.2.</span> <span class="toc-text">HPA自动伸缩</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B9%E6%8D%AECPU%E5%88%A9%E7%94%A8%E7%8E%87%E4%BC%B8%E7%BC%A9"><span class="toc-number">1.2.1.</span> <span class="toc-text">根据CPU利用率伸缩</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/post/d7e3eb60.html" title="kubernetes-HPA控制器"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes-HPA控制器"/></a><div class="content"><a class="title" href="/post/d7e3eb60.html" title="kubernetes-HPA控制器">kubernetes-HPA控制器</a><time datetime="2022-07-09T02:49:36.000Z" title="发表于 2022-07-09 10:49:36">2022-07-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/823264f9.html" title="kubernetes资源对象-DaemonSet"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes资源对象-DaemonSet"/></a><div class="content"><a class="title" href="/post/823264f9.html" title="kubernetes资源对象-DaemonSet">kubernetes资源对象-DaemonSet</a><time datetime="2022-07-07T10:41:40.000Z" title="发表于 2022-07-07 18:41:40">2022-07-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/bf60bd3f.html" title="kubernetes资源对象-StatefulSet"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes资源对象-StatefulSet"/></a><div class="content"><a class="title" href="/post/bf60bd3f.html" title="kubernetes资源对象-StatefulSet">kubernetes资源对象-StatefulSet</a><time datetime="2022-07-07T06:41:13.000Z" title="发表于 2022-07-07 14:41:13">2022-07-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/d6983aff.html" title="kubernetes资源对象-Job与cronjob"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes资源对象-Job与cronjob"/></a><div class="content"><a class="title" href="/post/d6983aff.html" title="kubernetes资源对象-Job与cronjob">kubernetes资源对象-Job与cronjob</a><time datetime="2022-07-07T02:45:00.000Z" title="发表于 2022-07-07 10:45:00">2022-07-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/8420431d.html" title="kubernetes资源对象-Secret"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes资源对象-Secret"/></a><div class="content"><a class="title" href="/post/8420431d.html" title="kubernetes资源对象-Secret">kubernetes资源对象-Secret</a><time datetime="2022-07-05T08:44:52.000Z" title="发表于 2022-07-05 16:44:52">2022-07-05</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('/img/background.png')"><div id="footer-wrap"><div class="copyright">&copy;2022 - 2023  <i id="heartbeat" class="fa fas fa-heartbeat"></i> G.</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/HCLonely/images@master/others/heartbeat.min.css"></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="rightMenu"><div class="rightMenu-group rightMenu-small"><div class="rightMenu-item" id="menu-backward"><i class="fa-solid fa-arrow-left"></i></div><div class="rightMenu-item" id="menu-forward"><i class="fa-solid fa-arrow-right"></i></div><div class="rightMenu-item" id="menu-refresh"><i class="fa-solid fa-arrow-rotate-right"></i></div><div class="rightMenu-item" id="menu-home"><i class="fa-solid fa-house"></i></div></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item menu-link" href="/archives/"><i class="fa-solid fa-archive"></i><span>文章归档</span></a><a class="rightMenu-item menu-link" href="/categories/"><i class="fa-solid fa-folder-open"></i><span>文章分类</span></a><a class="rightMenu-item menu-link" href="/tags/"><i class="fa-solid fa-tags"></i><span>文章标签</span></a></div><div class="rightMenu-group rightMenu-line rightMenuNormal"><a class="rightMenu-item menu-link" id="menu-radompage" href="/random/index.html"><i class="fa-solid fa-shoe-prints"></i><span>随便逛逛</span></a><div class="rightMenu-item" id="menu-translate"><i class="fa-solid fa-earth-asia"></i><span>繁简切换</span></div><div class="rightMenu-item" id="menu-darkmode"><i class="fa-solid fa-moon"></i><span>切换模式</span></div></div></div><div id="rightmenu-mask"></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://my-twikoo-nine-xi.vercel.app/',
+      region: 'ap-shenzhen',
+      onCommentLoaded: () => {
+        btf.loadLightbox(document.querySelectorAll('#twikoo .tk-content img:not(.tk-owo-emotion)'))
+      }
+    }, null))
+  }
+
+  const loadTwikoo = () => {
+    if (typeof twikoo === 'object') setTimeout(init,0)
+    else getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(init)
+  }
+
+  const getCount = () => {
+    const countELement = document.getElementById('twikoo-count')
+    if(!countELement) return
+    twikoo.getCommentsCount({
+      envId: 'https://my-twikoo-nine-xi.vercel.app/',
+      region: 'ap-shenzhen',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(res => {
+      countELement.textContent = res[0].count
+    }).catch(err => {
+      console.error(err)
+    })
+  }
+
+  if ('Twikoo' === 'Twikoo' || !false) {
+    if (false) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else {
+      loadTwikoo()
+      
+    }
+  } else {
+    window.loadOtherComment = loadTwikoo
+  }
+})()</script></div><div class="aplayer no-destroy" data-id="3778678" data-server="netease" data-type="playlist" data-fixed="true" data-mini="true" data-listFolded="false" data-order="random" data-lrctype="1" data-preload="none" data-autoplay="true" muted></div><script defer src="https://npm.elemecdn.com/jquery@latest/dist/jquery.min.js"></script><canvas id="universe"></canvas><script defer src="/js/universe.js"></script><script data-pjax defer src="https://npm.elemecdn.com/tzy-blog/lib/js/theme/chocolate.js"></script><script defer data-pjax src="/js/rightMenu.js"></script><script id="click-show-text" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-show-text.min.js" data-mobile="false" data-text="I,LOVE,P,X,T" data-fontsize="15px" data-random="false" async="async"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"]):not([href="/music/"]):not([href="/no-pjax/"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener
+  btf.removeGlobalFnEvent('pjax')
+  btf.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+  typeof disqusjs === 'object' && disqusjs.destroy()
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div><!-- hexo injector body_end start --><script data-pjax>
+  function butterfly_clock_anzhiyu_injector_config(){
+    var parent_div_git = document.getElementsByClassName('sticky_layout')[0];
+    var item_html = '<div class="card-widget card-clock"><div class="card-glass"><div class="card-background"><div class="card-content"><div id="hexo_electric_clock"><img class="entered loading" id="card-clock-loading" src="https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/loading.gif" style="height: 120px; width: 100%;" data-ll-status="loading"/></div></div></div></div></div>';
+    console.log('已挂载butterfly_clock_anzhiyu')
+    if(parent_div_git) {
+      parent_div_git.insertAdjacentHTML("afterbegin",item_html)
+    }
+  }
+  var elist = 'null'.split(',');
+  var cpage = location.pathname;
+  var epage = 'all';
+  var qweather_key = '09f915900ec44da8a9acab8475ea6585';
+  var gaud_map_key = '03a58066d1a8fbaf5afcfee59fff134c';
+  var baidu_ak_key = 'undefined';
+  var flag = 0;
+  var clock_rectangle = '112.982279,28.19409';
+  var clock_default_rectangle_enable = 'false';
+
+  for (var i=0;i<elist.length;i++){
+    if (cpage.includes(elist[i])){
+      flag++;
+    }
+  }
+
+  if ((epage ==='all')&&(flag == 0)){
+    butterfly_clock_anzhiyu_injector_config();
+  }
+  else if (epage === cpage){
+    butterfly_clock_anzhiyu_injector_config();
+  }
+  </script><script src="https://widget.qweather.net/simple/static/js/he-simple-common.js?v=2.0"></script><script data-pjax src="https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/clock.min.js"></script><!-- hexo injector body_end end --><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":150,"height":300,"hOffset":20,"vOffset":-20},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/"});</script></body></html>
