@@ -1,0 +1,409 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>kubernetes-Pod生命周期和探针 | G.のblog</title><meta name="author" content="G."><meta name="copyright" content="G."><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="Pod生命周期和探针pod lifecyclepod的生命周期，从start后可以配置postStart检测，运行过程中可以配置livenessProbe和readinessProbe，最后在stop前可以preStop操作。  探针的简介探针就是有 kubelet 对容器执行的定期诊断，以保证Pod的状态始终是处于运行状态，要执行诊断，kubelet 调用由容器实现的Handler（处理程序），">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubernetes-Pod生命周期和探针">
+<meta property="og:url" content="https://atuhf.github.io/post/d2f55df9.html">
+<meta property="og:site_name" content="G.のblog">
+<meta property="og:description" content="Pod生命周期和探针pod lifecyclepod的生命周期，从start后可以配置postStart检测，运行过程中可以配置livenessProbe和readinessProbe，最后在stop前可以preStop操作。  探针的简介探针就是有 kubelet 对容器执行的定期诊断，以保证Pod的状态始终是处于运行状态，要执行诊断，kubelet 调用由容器实现的Handler（处理程序），">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://atuhf.github.io/img/kubernetes.png">
+<meta property="article:published_time" content="2022-07-10T01:53:00.000Z">
+<meta property="article:modified_time" content="2023-12-11T14:06:37.568Z">
+<meta property="article:author" content="G.">
+<meta property="article:tag" content="kubernetes">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://atuhf.github.io/img/kubernetes.png"><link rel="shortcut icon" href="/img/touxiang.png"><link rel="canonical" href="https://atuhf.github.io/post/d2f55df9.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
+  noticeOutdate: {"limitDay":365,"position":"top","messagePrev":"It has been","messageNext":"days since the last update, the content of the article may be outdated."},
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: G.","link":"链接: ","source":"来源: G.のblog","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'kubernetes-Pod生命周期和探针',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2023-12-11 22:06:37'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css"><style type="text/css">#toggle-sidebar {left:100px}</style><link rel="stylesheet" href="/css/universe.css"><link rel="stylesheet" href="/css/rightMenu.css"><!-- hexo injector head_end start --><link rel="stylesheet" href="https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/clock.min.css" /><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load',() => { preloader.endLoading() })
+
+  if (true) {
+    document.addEventListener('pjax:send', () => { preloader.initLoading() })
+    document.addEventListener('pjax:complete', () => { preloader.endLoading() })
+  }
+})()</script><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/touxiang.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">40</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('/img/background.png')"><nav id="nav"><span id="blog-info"><a href="/" title="G.のblog"><span class="site-name">G.のblog</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">kubernetes-Pod生命周期和探针<a class="post-edit-link" href="null_posts/kubernetes-Pod生命周期和探针.md" title="编辑" target="_blank"><i class="fas fa-pencil-alt"></i></a></h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="fa-fw post-meta-icon far fa-calendar-alt"></i><span class="post-meta-label">发表于</span><time datetime="2022-07-10T01:53:00.000Z" title="发表于 2022-07-10 09:53:00">2022-07-10</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/kubernetes/">kubernetes</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span id="" data-flag-title="kubernetes-Pod生命周期和探针"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="twikoo_visitors"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="Pod生命周期和探针"><a href="#Pod生命周期和探针" class="headerlink" title="Pod生命周期和探针"></a>Pod生命周期和探针</h1><h2 id="pod-lifecycle"><a href="#pod-lifecycle" class="headerlink" title="pod lifecycle"></a>pod lifecycle</h2><p>pod的生命周期，从start后可以配置postStart检测，运行过程中可以配置livenessProbe和readinessProbe，最后在stop前可以preStop操作。</p>
+<p><img src="/images/pod-lifecycle.png"></p>
+<h2 id="探针的简介"><a href="#探针的简介" class="headerlink" title="探针的简介"></a>探针的简介</h2><p>探针就是有 kubelet 对容器执行的定期诊断，以保证Pod的状态始终是处于运行状态，要执行诊断，kubelet 调用由容器实现的Handler（处理程序），也成为Hook（钩子）了，有三种类型的处理程序：</p>
+<ul>
+<li>ExecAction：# 在容器执行指定命令，如果命令退出时返回码为0则认为诊断成功；</li>
+<li>TCPSocketAction：# 对指定端口上的容器的IP地址进行TCP检查，如果端口打开，则诊断被认为是成功的；</li>
+<li>HTTPGetAction：# 对指定的端口和路径上的容器的IP地址执行HTTP GET请求，如果响应的状态码大于等于200且小于400，则诊断被认为是成功的；</li>
+</ul>
+<p>每次探测都将获得以下三种结果之一：</p>
+<ul>
+<li>成功：容器通过了诊断</li>
+<li>失败：容器未通过诊断</li>
+<li>未知：诊断失败，因此不会采取任何行动</li>
+</ul>
+<h3 id="Pod的重启策略"><a href="#Pod的重启策略" class="headerlink" title="Pod的重启策略"></a>Pod的重启策略</h3><p>Pod一旦配置了探针，在检测失败的时候，会基于restartPolicy对Pod进行下一步操作</p>
+<p>restartPolicy（容器重启策略）：</p>
+<ul>
+<li>Always：当容器出现异常时，k8s会自动重启该容器</li>
+</ul>
+<p>ReplicationController、Replicaset、Deployment，默认为Always。</p>
+<ul>
+<li>OnFailure：当容器失败时（容器停止运行且退出码不为0），这时k8s就会自动重启该容器</li>
+<li>Never：不论容器运行状态如何都不会重启该容器，例如Job或CronJob</li>
+</ul>
+<p><img src="/images/pod-restart.png"></p>
+<h3 id="探针的类型"><a href="#探针的类型" class="headerlink" title="探针的类型"></a>探针的类型</h3><blockquote>
+<p>startupProbe：# 启动探针，在kubernetes v1.16就引入了，判断容器内应用程序是否已启动完成，如果配置了启动探测，则会先禁用所有其它的探测，直到startupProbe检测成功为止，如果startupProbe探测失败，则kubelet将杀死容器，容器将按照重启策略进行下一步操作，如果容器没有提供启动探测，则默认状态为成功；</p>
+<p>livenessProbe：# 存活探针，检测容器是否正在运行，如果存活探测失败,则kubelet会杀死容器，并且容器将受到其重启策略的影响，如果容器不提供存活探针，则默认状态为Success，livenessProbe用于控制是否重启Pod。</p>
+<p>readinessProbe: # 就绪探针，如果就绪探测失败，端点控制器将从与Pod匹配的所有Service的端点中删除该Pod的IP地址，初始延迟之前的就绪状态默认为Failure(失败)，如果容器不提供就绪探针，则默认状态为Success，readinessProbe用于控制pod是否添加至service。</p>
+</blockquote>
+<h3 id="探针通用配置参数"><a href="#探针通用配置参数" class="headerlink" title="探针通用配置参数"></a>探针通用配置参数</h3><p>探针有很多配置字段，我们可以使用这些字段精确的控制存活和就绪检测的行为：<a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes">https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes</a></p>
+<ul>
+<li>initialDelaySeconds：容器启动后要等待多少秒后才启动启动、存活和就绪探针。 如果定义了启动探针，则存活探针和就绪探针的延迟将在启动探针已成功之后才开始计算。 如果 periodSeconds 的值大于 initialDelaySeconds，则 initialDelaySeconds 将被忽略。默认是 0 秒，最小值是 0。</li>
+<li>periodSeconds：执行探测的时间间隔（单位是秒）。默认是 10 秒。最小值是 1。</li>
+<li>timeoutSeconds：单次探测的超时后等待多少秒。默认值是 1 秒。最小值是 1。</li>
+<li>successThreshold：探针在失败后，被视为成功的最小连续成功数。默认值是 1。 存活和启动探测的这个值必须是 1。最小值是 1。</li>
+<li>failureThreshold：探针连续失败了 failureThreshold 次之后， Kubernetes 认为总体上检查已失败：容器状态未就绪、不健康、不活跃。 对于启动探针或存活探针而言，如果至少有 failureThreshold 个探针已失败， Kubernetes 会将容器视为不健康并为这个特定的容器触发重启操作。 kubelet 遵循该容器的 terminationGracePeriodSeconds 设置。 对于失败的就绪探针，kubelet 继续运行检查失败的容器，并继续运行更多探针； 因为检查失败，kubelet 将 Pod 的 Ready 状况设置为 false。</li>
+<li>terminationGracePeriodSeconds：为 kubelet 配置从为失败的容器触发终止操作到强制容器运行时停止该容器之前等待的宽限时长。 默认值是继承 Pod 级别的 terminationGracePeriodSeconds 值（如果不设置则为 30 秒），最小值为 1。 更多细节请参见探针级别terminationGracePeriodSeconds。</li>
+</ul>
+<h3 id="探针http配置参数"><a href="#探针http配置参数" class="headerlink" title="探针http配置参数"></a>探针http配置参数</h3><p>HTTP 探测器可以在httpGet上配置额外的字段：</p>
+<ul>
+<li>host：连接使用的主机名，默认是Pod的IP，也可以在HTTP头中设置“Host”来代替。</li>
+<li>scheme：用于设置连接主机的方式（HTTP 还是 HTTPS）。默认是 “HTTP”。</li>
+<li>path：访问 HTTP 服务的路径。默认值为 “&#x2F;“。</li>
+<li>httpHeaders：请求中自定义的 HTTP 头。HTTP 头字段允许重复。</li>
+<li>port：访问容器的端口号或者端口名。如果数字必须在 1～65535 之间。</li>
+</ul>
+<p><strong>探针示例</strong></p>
+<p>1、http-Probe</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/http-probe<span class="comment"># cat 1-http-Probe.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-frontend-deployment</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels: <span class="comment">#rs or deployment</span></span><br><span class="line">      app: myserver-myapp-frontend-label</span><br><span class="line">    <span class="comment">#matchExpressions:</span></span><br><span class="line">    <span class="comment">#  - &#123;key: app, operator: In, values: [myserver-myapp-frontend,ng-rs-81]&#125;</span></span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: myserver-myapp-frontend-label</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: myserver-myapp-frontend-label</span><br><span class="line">        image: nginx:1.20.2</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">        <span class="comment">#readinessProbe:</span></span><br><span class="line">        livenessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            <span class="comment">#path: /monitor/monitor.html</span></span><br><span class="line">            path: /index.html</span><br><span class="line">            port: 80</span><br><span class="line">          initialDelaySeconds: 5</span><br><span class="line">          periodSeconds: 3</span><br><span class="line">          timeoutSeconds: 3</span><br><span class="line">          successThreshold: 1</span><br><span class="line">          failureThreshold: 3</span><br><span class="line"></span><br><span class="line">        readinessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            <span class="comment">#path: /monitor/monitor.html</span></span><br><span class="line">            path: /index.html</span><br><span class="line">            port: 80</span><br><span class="line">          initialDelaySeconds: 5</span><br><span class="line">          periodSeconds: 3</span><br><span class="line">          timeoutSeconds: 3</span><br><span class="line">          successThreshold: 1</span><br><span class="line">          failureThreshold: 3</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-frontend-service</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - name: http</span><br><span class="line">    port: 80</span><br><span class="line">    targetPort: 80</span><br><span class="line">    nodePort: 40018</span><br><span class="line">    protocol: TCP</span><br><span class="line">  <span class="built_in">type</span>: NodePort</span><br><span class="line">  selector:</span><br><span class="line">    app: myserver-myapp-frontend-label</span><br></pre></td></tr></table></figure>
+
+<p>2、tcp-Probe</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/http-probe<span class="comment"># cat 2-tcp-Probe.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-frontend-deployment</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels: <span class="comment">#rs or deployment</span></span><br><span class="line">      app: myserver-myapp-frontend-label</span><br><span class="line">    <span class="comment">#matchExpressions:</span></span><br><span class="line">    <span class="comment">#  - &#123;key: app, operator: In, values: [myserver-myapp-frontend,ng-rs-81]&#125;</span></span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: myserver-myapp-frontend-label</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: myserver-myapp-frontend-label</span><br><span class="line">        image: nginx:1.20.2</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">        livenessProbe:</span><br><span class="line">        <span class="comment">#readinessProbe:</span></span><br><span class="line">          tcpSocket:</span><br><span class="line">            <span class="comment">#port: 80</span></span><br><span class="line">            port: 80</span><br><span class="line">          initialDelaySeconds: 5</span><br><span class="line">          periodSeconds: 3</span><br><span class="line">          timeoutSeconds: 5</span><br><span class="line">          successThreshold: 1</span><br><span class="line">          failureThreshold: 3</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-frontend-service</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - name: http</span><br><span class="line">    port: 81</span><br><span class="line">    targetPort: 80</span><br><span class="line">    nodePort: 40012</span><br><span class="line">    protocol: TCP</span><br><span class="line">  <span class="built_in">type</span>: NodePort</span><br><span class="line">  selector:</span><br><span class="line">    app: myserver-myapp-frontend</span><br></pre></td></tr></table></figure>
+
+<p>3、exec-Probe</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/http-probe<span class="comment"># cat 3-exec-Probe.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-redis-deployment</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels: <span class="comment">#rs or deployment</span></span><br><span class="line">      app: myserver-myapp-redis-label</span><br><span class="line">    <span class="comment">#matchExpressions:</span></span><br><span class="line">    <span class="comment">#  - &#123;key: app, operator: In, values: [myserver-myapp-redis,ng-rs-81]&#125;</span></span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: myserver-myapp-redis-label</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: myserver-myapp-redis-container</span><br><span class="line">        image: redis</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 6379</span><br><span class="line">        livenessProbe:</span><br><span class="line">        <span class="comment">#readinessProbe:</span></span><br><span class="line">          <span class="built_in">exec</span>:</span><br><span class="line">            <span class="built_in">command</span>:</span><br><span class="line">            <span class="comment">#- /apps/redis/bin/redis-cli</span></span><br><span class="line">            - /usr/local/bin/redis-cli </span><br><span class="line">            - quit</span><br><span class="line">          initialDelaySeconds: 5</span><br><span class="line">          periodSeconds: 3</span><br><span class="line">          timeoutSeconds: 5</span><br><span class="line">          successThreshold: 1</span><br><span class="line">          failureThreshold: 3</span><br><span class="line">      </span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-redis-service</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - name: http</span><br><span class="line">    port: 6379</span><br><span class="line">    targetPort: 6379</span><br><span class="line">    nodePort: 40016</span><br><span class="line">    protocol: TCP</span><br><span class="line">  <span class="built_in">type</span>: NodePort</span><br><span class="line">  selector:</span><br><span class="line">    app: myserver-myapp-redis-label</span><br></pre></td></tr></table></figure>
+
+<p>4、startupProbe</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/http-probe<span class="comment"># cat 4-startupProbe.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-frontend-deployment</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels: <span class="comment">#rs or deployment</span></span><br><span class="line">      app: myserver-myapp-frontend-label</span><br><span class="line">    <span class="comment">#matchExpressions:</span></span><br><span class="line">    <span class="comment">#  - &#123;key: app, operator: In, values: [myserver-myapp-frontend,ng-rs-81]&#125;</span></span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: myserver-myapp-frontend-label</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: myserver-myapp-frontend-label</span><br><span class="line">        image: nginx:1.20.2</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">        startupProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            path: /index.html</span><br><span class="line">            port: 80</span><br><span class="line">          initialDelaySeconds: 5 <span class="comment">#首次检测延迟5s</span></span><br><span class="line">          failureThreshold: 3  <span class="comment">#从成功转为失败的次数</span></span><br><span class="line">          periodSeconds: 3 <span class="comment">#探测间隔周期</span></span><br><span class="line"></span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-frontend-service</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - name: http</span><br><span class="line">    port: 81</span><br><span class="line">    targetPort: 80</span><br><span class="line">    nodePort: 40012</span><br><span class="line">    protocol: TCP</span><br><span class="line">  <span class="built_in">type</span>: NodePort</span><br><span class="line">  selector:</span><br><span class="line">    app: myserver-myapp-frontend-label</span><br></pre></td></tr></table></figure>
+
+<p>5、startupProbe-livenessProbe-readinessProbe</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/http-probe<span class="comment"># cat 5-startupProbe-livenessProbe-readinessProbe.yaml </span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-frontend-deployment</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels: <span class="comment">#rs or deployment</span></span><br><span class="line">      app: myserver-myapp-frontend-label</span><br><span class="line">    <span class="comment">#matchExpressions:</span></span><br><span class="line">    <span class="comment">#  - &#123;key: app, operator: In, values: [myserver-myapp-frontend,ng-rs-81]&#125;</span></span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: myserver-myapp-frontend-label</span><br><span class="line">    spec:</span><br><span class="line">      terminationGracePeriodSeconds: 60</span><br><span class="line">      containers:</span><br><span class="line">      - name: myserver-myapp-frontend-label</span><br><span class="line">        image: nginx:1.20.2</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 80</span><br><span class="line">        startupProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            <span class="comment">#path: /monitor/index.html</span></span><br><span class="line">            path: /index.html</span><br><span class="line">            port: 80</span><br><span class="line">          initialDelaySeconds: 5 <span class="comment">#首次检测延迟5s</span></span><br><span class="line">          failureThreshold: 3  <span class="comment">#从成功转为失败的次数</span></span><br><span class="line">          periodSeconds: 3 <span class="comment">#探测间隔周期</span></span><br><span class="line">        readinessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            <span class="comment">#path: /monitor/monitor.html</span></span><br><span class="line">            path: /index.html</span><br><span class="line">            port: 80</span><br><span class="line">          initialDelaySeconds: 5</span><br><span class="line">          periodSeconds: 3</span><br><span class="line">          timeoutSeconds: 5</span><br><span class="line">          successThreshold: 1</span><br><span class="line">          failureThreshold: 3</span><br><span class="line">        livenessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            <span class="comment">#path: /monitor/monitor.html</span></span><br><span class="line">            path: /index.html</span><br><span class="line">            port: 80</span><br><span class="line">          initialDelaySeconds: 5</span><br><span class="line">          periodSeconds: 3</span><br><span class="line">          timeoutSeconds: 5</span><br><span class="line">          successThreshold: 1</span><br><span class="line">          failureThreshold: 3</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp-frontend-service</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - name: http</span><br><span class="line">    port: 81</span><br><span class="line">    targetPort: 80</span><br><span class="line">    nodePort: 40012</span><br><span class="line">    protocol: TCP</span><br><span class="line">  <span class="built_in">type</span>: NodePort</span><br><span class="line">  selector:</span><br><span class="line">    app: myserver-myapp-frontend-label</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/probe-example.png"></p>
+<h3 id="postStart-and-preStop-handlers"><a href="#postStart-and-preStop-handlers" class="headerlink" title="postStart and preStop handlers"></a>postStart and preStop handlers</h3><p>官方文档：<a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/attach-handler-lifecycle-event/">https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/attach-handler-lifecycle-event/</a></p>
+<p>postStart 和 preStop handlers 处理函数：</p>
+<ul>
+<li>postStart：Pod被创建后立即执行检测，即不等待pod中的服务启动，如果postStart执行失败pod就不会继续创建。</li>
+<li>preStop：在Pod被停止之前执行的。</li>
+</ul>
+<p><img src="/images/postStart-preStop.png"></p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">root@k8s-master1:/opt/zhangg-k8s-yaml/postStart-preStop<span class="comment"># cat 1-myserver-myapp1-postStart-preStop.yaml</span></span><br><span class="line">apiVersion: apps/v1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp1-lifecycle</span><br><span class="line">  labels:</span><br><span class="line">    app: myserver-myapp1-lifecycle</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: myserver-myapp1-lifecycle-label</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: myserver-myapp1-lifecycle-label</span><br><span class="line">    spec:</span><br><span class="line">      terminationGracePeriodSeconds: 60</span><br><span class="line">      containers:</span><br><span class="line">      - name: myserver-myapp1-lifecycle-label</span><br><span class="line">        image: tomcat:7.0.94-alpine </span><br><span class="line">        lifecycle:</span><br><span class="line">          postStart:</span><br><span class="line">            <span class="built_in">exec</span>:</span><br><span class="line">             <span class="comment">#command: 把自己注册到注册在中心</span></span><br><span class="line">              <span class="built_in">command</span>: [<span class="string">&quot;/bin/sh&quot;</span>, <span class="string">&quot;-c&quot;</span>, <span class="string">&quot;echo &#x27;Hello from the postStart handler&#x27; &gt;&gt; /usr/local/tomcat/webapps/ROOT/index.html&quot;</span>]</span><br><span class="line"></span><br><span class="line">            <span class="comment">#httpGet:</span></span><br><span class="line">            <span class="comment">#  #path: /monitor/monitor.html</span></span><br><span class="line">            <span class="comment">#  host: www.magedu.com</span></span><br><span class="line">            <span class="comment">#  port: 80</span></span><br><span class="line">            <span class="comment">#  scheme: HTTP</span></span><br><span class="line">            <span class="comment">#  path: index.html</span></span><br><span class="line">          preStop:</span><br><span class="line">            <span class="built_in">exec</span>:</span><br><span class="line">             <span class="comment">#command: 把自己从注册中心移除</span></span><br><span class="line">              <span class="built_in">command</span>: [<span class="string">&quot;/usr/local/tomcat/bin/catalina.sh&quot;</span>,<span class="string">&quot;stop&quot;</span>]</span><br><span class="line">        ports:</span><br><span class="line">          - name: http</span><br><span class="line">            containerPort: 8080</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: myserver-myapp1-lifecycle-service</span><br><span class="line">  namespace: myserver</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - name: http</span><br><span class="line">    port: 80</span><br><span class="line">    targetPort: 8080</span><br><span class="line">    nodePort: 30012</span><br><span class="line">    protocol: TCP</span><br><span class="line">  <span class="built_in">type</span>: NodePort</span><br><span class="line">  selector:</span><br><span class="line">    app: myserver-myapp1-lifecycle-label</span><br></pre></td></tr></table></figure>
+
+<p><strong>Pod的终止流程：</strong></p>
+<blockquote>
+<p>1、创建pod</p>
+<p>完成调度流程</p>
+<p>容器启动并执行postStart</p>
+<p>livenessProbe</p>
+<p>进入running状态</p>
+<p>readinessProbe</p>
+<p>service关联pod</p>
+<p>接受客户端请求</p>
+</blockquote>
+<blockquote>
+<p>2、删除pod</p>
+<p>Pod被设置为“terminating”状态，从service的Endpoint列表中删除并不再接受客户端请求。</p>
+<p>执行ProStop</p>
+<p>Kubernetes向Pod中容器发送SIGTERM信号（正常终止信号）终止pod里面的主进程，这个信号让容器知道自己很快将会被关闭</p>
+<p>terminationGracePeriodSeconds: 60 #可选终止等待期，如果有设置删除宽限时间，则等待宽限时间到期，否则最多等待30s，kubernetes等待指定的时间称为优雅终止宽限期，默认情况下是30s，值得注意的就是等待期与preStop Hook和SIGTERM信号并行执行，即kubernetes可能不会等待preStop Hook完成（最长30秒后主进程还没有结束，这时就会强制终止pod）。</p>
+<p>SIGKILL信号被发送到Pod，并删除Pod</p>
+</blockquote>
+<p><img src="/images/pod-flow-path.png"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://atuhf.github.io/">G.</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://atuhf.github.io/post/d2f55df9.html">https://atuhf.github.io/post/d2f55df9.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://atuhf.github.io" target="_blank">G.のblog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/kubernetes/">kubernetes</a></div><div class="post_share"><div class="social-share" data-image="/img/kubernetes.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.png" target="_blank"><img class="post-qr-code-img" src="/img/wechat.png" alt="wechat"/></a><div class="post-qr-code-desc">wechat</div></li><li class="reward-item"><a href="/img/alipay.png" target="_blank"><img class="post-qr-code-img" src="/img/alipay.png" alt="alipay"/></a><div class="post-qr-code-desc">alipay</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-full"><a href="/post/58a285.html" title="kubernetes-Pod的常见状态"><img class="cover" src="/img/kubernetes.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">kubernetes-Pod的常见状态</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/post/787eeeb4.html" title="kubernetes 安装coreDNS组件"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-26</div><div class="title">kubernetes 安装coreDNS组件</div></div></a></div><div><a href="/post/e81f2dbc.html" title="利用kubeasz工具 二进制安装k8s高可用集群"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-25</div><div class="title">利用kubeasz工具 二进制安装k8s高可用集群</div></div></a></div><div><a href="/post/9bc16ef7.html" title="kubernetes-ETCD简要说明"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-28</div><div class="title">kubernetes-ETCD简要说明</div></div></a></div><div><a href="/post/305a7887.html" title="kubernetes-etcd-V3数据备份与恢复"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-29</div><div class="title">kubernetes-etcd-V3数据备份与恢复</div></div></a></div><div><a href="/post/9ab01199.html" title="kubernetes网络插件Flannel&#x2F;Calico对比"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-06-30</div><div class="title">kubernetes网络插件Flannel&#x2F;Calico对比</div></div></a></div><div><a href="/post/24a5cc96.html" title="kubernetes资源对象-Configmap"><img class="cover" src="/img/kubernetes.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-05</div><div class="title">kubernetes资源对象-Configmap</div></div></a></div></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/touxiang.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">G.</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">40</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Pod%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E5%92%8C%E6%8E%A2%E9%92%88"><span class="toc-number">1.</span> <span class="toc-text">Pod生命周期和探针</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#pod-lifecycle"><span class="toc-number">1.1.</span> <span class="toc-text">pod lifecycle</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A2%E9%92%88%E7%9A%84%E7%AE%80%E4%BB%8B"><span class="toc-number">1.2.</span> <span class="toc-text">探针的简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Pod%E7%9A%84%E9%87%8D%E5%90%AF%E7%AD%96%E7%95%A5"><span class="toc-number">1.2.1.</span> <span class="toc-text">Pod的重启策略</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A2%E9%92%88%E7%9A%84%E7%B1%BB%E5%9E%8B"><span class="toc-number">1.2.2.</span> <span class="toc-text">探针的类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A2%E9%92%88%E9%80%9A%E7%94%A8%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="toc-number">1.2.3.</span> <span class="toc-text">探针通用配置参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A2%E9%92%88http%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="toc-number">1.2.4.</span> <span class="toc-text">探针http配置参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#postStart-and-preStop-handlers"><span class="toc-number">1.2.5.</span> <span class="toc-text">postStart and preStop handlers</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/post/d2f55df9.html" title="kubernetes-Pod生命周期和探针"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes-Pod生命周期和探针"/></a><div class="content"><a class="title" href="/post/d2f55df9.html" title="kubernetes-Pod生命周期和探针">kubernetes-Pod生命周期和探针</a><time datetime="2022-07-10T01:53:00.000Z" title="发表于 2022-07-10 09:53:00">2022-07-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/58a285.html" title="kubernetes-Pod的常见状态"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes-Pod的常见状态"/></a><div class="content"><a class="title" href="/post/58a285.html" title="kubernetes-Pod的常见状态">kubernetes-Pod的常见状态</a><time datetime="2022-07-09T09:38:52.000Z" title="发表于 2022-07-09 17:38:52">2022-07-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/d7e3eb60.html" title="kubernetes-HPA控制器"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes-HPA控制器"/></a><div class="content"><a class="title" href="/post/d7e3eb60.html" title="kubernetes-HPA控制器">kubernetes-HPA控制器</a><time datetime="2022-07-09T02:49:36.000Z" title="发表于 2022-07-09 10:49:36">2022-07-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/823264f9.html" title="kubernetes资源对象-DaemonSet"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes资源对象-DaemonSet"/></a><div class="content"><a class="title" href="/post/823264f9.html" title="kubernetes资源对象-DaemonSet">kubernetes资源对象-DaemonSet</a><time datetime="2022-07-07T10:41:40.000Z" title="发表于 2022-07-07 18:41:40">2022-07-07</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/bf60bd3f.html" title="kubernetes资源对象-StatefulSet"><img src="/img/kubernetes.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="kubernetes资源对象-StatefulSet"/></a><div class="content"><a class="title" href="/post/bf60bd3f.html" title="kubernetes资源对象-StatefulSet">kubernetes资源对象-StatefulSet</a><time datetime="2022-07-07T06:41:13.000Z" title="发表于 2022-07-07 14:41:13">2022-07-07</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('/img/background.png')"><div id="footer-wrap"><div class="copyright">&copy;2022 - 2023  <i id="heartbeat" class="fa fas fa-heartbeat"></i> G.</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/HCLonely/images@master/others/heartbeat.min.css"></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="rightMenu"><div class="rightMenu-group rightMenu-small"><div class="rightMenu-item" id="menu-backward"><i class="fa-solid fa-arrow-left"></i></div><div class="rightMenu-item" id="menu-forward"><i class="fa-solid fa-arrow-right"></i></div><div class="rightMenu-item" id="menu-refresh"><i class="fa-solid fa-arrow-rotate-right"></i></div><div class="rightMenu-item" id="menu-home"><i class="fa-solid fa-house"></i></div></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item menu-link" href="/archives/"><i class="fa-solid fa-archive"></i><span>文章归档</span></a><a class="rightMenu-item menu-link" href="/categories/"><i class="fa-solid fa-folder-open"></i><span>文章分类</span></a><a class="rightMenu-item menu-link" href="/tags/"><i class="fa-solid fa-tags"></i><span>文章标签</span></a></div><div class="rightMenu-group rightMenu-line rightMenuNormal"><a class="rightMenu-item menu-link" id="menu-radompage" href="/random/index.html"><i class="fa-solid fa-shoe-prints"></i><span>随便逛逛</span></a><div class="rightMenu-item" id="menu-translate"><i class="fa-solid fa-earth-asia"></i><span>繁简切换</span></div><div class="rightMenu-item" id="menu-darkmode"><i class="fa-solid fa-moon"></i><span>切换模式</span></div></div></div><div id="rightmenu-mask"></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://my-twikoo-nine-xi.vercel.app/',
+      region: 'ap-shenzhen',
+      onCommentLoaded: () => {
+        btf.loadLightbox(document.querySelectorAll('#twikoo .tk-content img:not(.tk-owo-emotion)'))
+      }
+    }, null))
+  }
+
+  const loadTwikoo = () => {
+    if (typeof twikoo === 'object') setTimeout(init,0)
+    else getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(init)
+  }
+
+  const getCount = () => {
+    const countELement = document.getElementById('twikoo-count')
+    if(!countELement) return
+    twikoo.getCommentsCount({
+      envId: 'https://my-twikoo-nine-xi.vercel.app/',
+      region: 'ap-shenzhen',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(res => {
+      countELement.textContent = res[0].count
+    }).catch(err => {
+      console.error(err)
+    })
+  }
+
+  if ('Twikoo' === 'Twikoo' || !false) {
+    if (false) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else {
+      loadTwikoo()
+      
+    }
+  } else {
+    window.loadOtherComment = loadTwikoo
+  }
+})()</script></div><div class="aplayer no-destroy" data-id="3778678" data-server="netease" data-type="playlist" data-fixed="true" data-mini="true" data-listFolded="false" data-order="random" data-lrctype="1" data-preload="none" data-autoplay="true" muted></div><script defer src="https://npm.elemecdn.com/jquery@latest/dist/jquery.min.js"></script><canvas id="universe"></canvas><script defer src="/js/universe.js"></script><script data-pjax defer src="https://npm.elemecdn.com/tzy-blog/lib/js/theme/chocolate.js"></script><script defer data-pjax src="/js/rightMenu.js"></script><script id="click-show-text" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-show-text.min.js" data-mobile="false" data-text="I,LOVE,P,X,T" data-fontsize="15px" data-random="false" async="async"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"]):not([href="/music/"]):not([href="/no-pjax/"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener
+  btf.removeGlobalFnEvent('pjax')
+  btf.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+  typeof disqusjs === 'object' && disqusjs.destroy()
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div><!-- hexo injector body_end start --><script data-pjax>
+  function butterfly_clock_anzhiyu_injector_config(){
+    var parent_div_git = document.getElementsByClassName('sticky_layout')[0];
+    var item_html = '<div class="card-widget card-clock"><div class="card-glass"><div class="card-background"><div class="card-content"><div id="hexo_electric_clock"><img class="entered loading" id="card-clock-loading" src="https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/loading.gif" style="height: 120px; width: 100%;" data-ll-status="loading"/></div></div></div></div></div>';
+    console.log('已挂载butterfly_clock_anzhiyu')
+    if(parent_div_git) {
+      parent_div_git.insertAdjacentHTML("afterbegin",item_html)
+    }
+  }
+  var elist = 'null'.split(',');
+  var cpage = location.pathname;
+  var epage = 'all';
+  var qweather_key = '09f915900ec44da8a9acab8475ea6585';
+  var gaud_map_key = '03a58066d1a8fbaf5afcfee59fff134c';
+  var baidu_ak_key = 'undefined';
+  var flag = 0;
+  var clock_rectangle = '112.982279,28.19409';
+  var clock_default_rectangle_enable = 'false';
+
+  for (var i=0;i<elist.length;i++){
+    if (cpage.includes(elist[i])){
+      flag++;
+    }
+  }
+
+  if ((epage ==='all')&&(flag == 0)){
+    butterfly_clock_anzhiyu_injector_config();
+  }
+  else if (epage === cpage){
+    butterfly_clock_anzhiyu_injector_config();
+  }
+  </script><script src="https://widget.qweather.net/simple/static/js/he-simple-common.js?v=2.0"></script><script data-pjax src="https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/clock.min.js"></script><!-- hexo injector body_end end --><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":150,"height":300,"hOffset":20,"vOffset":-20},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/"});</script></body></html>
