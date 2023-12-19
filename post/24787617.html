@@ -1,0 +1,489 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="dark"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Golang的序列化与反序列化 | G.のblog</title><meta name="author" content="G."><meta name="copyright" content="G."><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#0d0d0d"><meta name="description" content="序列化与反序列化内存中的map、slice、array等等各种对象，如何保存到一个文件中？如果是自己定义的结构体的实例，又如何保存到一个文件中？ 我们又如何从文件中读取数据，并让它们在内存中再次恢复成自己对应的类型的实例？ 这里就要设计一套协议，按照某种规则，把内存中数据保存到文件中。文件是一个字节序列，所以必须把数据转换成字节序列，输出到文件。这就是序列化。反之，从文件的字节序列恢复到内存并且还">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang的序列化与反序列化">
+<meta property="og:url" content="https://atuhf.github.io/post/24787617.html">
+<meta property="og:site_name" content="G.のblog">
+<meta property="og:description" content="序列化与反序列化内存中的map、slice、array等等各种对象，如何保存到一个文件中？如果是自己定义的结构体的实例，又如何保存到一个文件中？ 我们又如何从文件中读取数据，并让它们在内存中再次恢复成自己对应的类型的实例？ 这里就要设计一套协议，按照某种规则，把内存中数据保存到文件中。文件是一个字节序列，所以必须把数据转换成字节序列，输出到文件。这就是序列化。反之，从文件的字节序列恢复到内存并且还">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://atuhf.github.io/img/golang.png">
+<meta property="article:published_time" content="2023-03-05T02:45:11.000Z">
+<meta property="article:modified_time" content="2023-12-19T10:02:22.145Z">
+<meta property="article:author" content="G.">
+<meta property="article:tag" content="Golang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://atuhf.github.io/img/golang.png"><link rel="shortcut icon" href="/img/touxiang.png"><link rel="canonical" href="https://atuhf.github.io/post/24787617.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
+  noticeOutdate: {"limitDay":365,"position":"top","messagePrev":"It has been","messageNext":"days since the last update, the content of the article may be outdated."},
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: G.","link":"链接: ","source":"来源: G.のblog","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: true,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Golang的序列化与反序列化',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2023-12-19 18:02:22'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/custom.css"><style type="text/css">#toggle-sidebar {left:100px}</style><link rel="stylesheet" href="/css/universe.css"><link rel="stylesheet" href="/css/rightMenu.css"><!-- hexo injector head_end start --><link rel="stylesheet" href="https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/clock.min.css" /><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load',() => { preloader.endLoading() })
+
+  if (true) {
+    document.addEventListener('pjax:send', () => { preloader.initLoading() })
+    document.addEventListener('pjax:complete', () => { preloader.endLoading() })
+  }
+})()</script><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/touxiang.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">59</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">13</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">14</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('/img/background.png')"><nav id="nav"><span id="blog-info"><a href="/" title="G.のblog"><span class="site-name">G.のblog</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">Golang的序列化与反序列化<a class="post-edit-link" href="null_posts/Golang的序列化与反序列化.md" title="编辑" target="_blank"><i class="fas fa-pencil-alt"></i></a></h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="fa-fw post-meta-icon far fa-calendar-alt"></i><span class="post-meta-label">发表于</span><time datetime="2023-03-05T02:45:11.000Z" title="发表于 2023-03-05 10:45:11">2023-03-05</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Golang/">Golang</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span id="" data-flag-title="Golang的序列化与反序列化"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="twikoo_visitors"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="序列化与反序列化"><a href="#序列化与反序列化" class="headerlink" title="序列化与反序列化"></a>序列化与反序列化</h1><p>内存中的map、slice、array等等各种对象，如何保存到一个文件中？如果是自己定义的结构体的实例，又如何保存到一个文件中？</p>
+<p>我们又如何从文件中读取数据，并让它们在内存中再次恢复成自己对应的类型的实例？</p>
+<p>这里就要设计一套<strong>协议</strong>，按照某种规则，把内存中数据保存到文件中。文件是一个字节序列，所以必须把数据转换成字节序列，输出到文件。这就是<strong>序列化</strong>。反之，从文件的字节序列恢复到内存并且还是<strong>原来的</strong>类型，就是<strong>反序列化</strong>。</p>
+<p><strong>序列化</strong>：不管你是什么类型的实例，我都要把你变成字节序列</p>
+<p><strong>反序列化</strong>：把 字节序列 能够还原成 原来的类型 的实例</p>
+<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><ul>
+<li>serialization 序列化：将内存中对象存储下来，把它变成一个个字节。转为二进制数据</li>
+<li>deserialization 反序列化：将文件的一个个字节恢复成内存中的对象。从二进制数据中恢复</li>
+</ul>
+<p>序列化保存到文件就是持久化。</p>
+<p>可以将数据序列化后持久化，或者网络传输；也可以将从文件中或者网络接收到的字节序列反序列化。</p>
+<p>我们可以把数据和二进制序列之间的相互转换称为二进制序列化、反序列化，把数据和字符序列之间的相互转换称为字符序列化、反序列化。</p>
+<p>字符序列化：JSON、XML等等</p>
+<p>二进制序列化：Protocol Buffers、MessagePack等等</p>
+<h2 id="JSON"><a href="#JSON" class="headerlink" title="JSON"></a>JSON</h2><p>JSON（JavaScript Object Notation，JS对象标记）是一种轻量级的数据交换格式。它基于1999年发布的ES3（ECMAScript是w3c组织制定的JavaScript规范）的一个子集，采用完全独立于变成语言的<strong>文本</strong>格式来存储和表示数据。应该说，目前JSON是得到了几乎所有浏览器的支持。</p>
+<p>官方文档：<a target="_blank" rel="noopener" href="https://www.json.org/">https://www.json.org/</a></p>
+<h3 id="JSON的数据类型"><a href="#JSON的数据类型" class="headerlink" title="JSON的数据类型"></a>JSON的数据类型</h3><h4 id="值"><a href="#值" class="headerlink" title="值"></a>值</h4><p><strong>双引号</strong>引起来的字符串、数值、true和false、null、对象、数组，这些结构可以嵌套。</p>
+<p><img src="/images/json-value.png"></p>
+<h4 id="字符串"><a href="#字符串" class="headerlink" title="字符串"></a>字符串</h4><p>由<strong>双引号</strong>包围起来的任意字符的组合，里面可以有转义字符。</p>
+<h4 id="数值"><a href="#数值" class="headerlink" title="数值"></a>数值</h4><p>有正负、有整数、浮点数</p>
+<h4 id="对象"><a href="#对象" class="headerlink" title="对象"></a>对象</h4><p><img src="/images/json-obj.png"></p>
+<h4 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h4><p>有序的值的集合 格式：[v1,v2,…,vn]</p>
+<p><img src="/images/json-arr.png" alt="Alt text"></p>
+<p>示例：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;person&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tom&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;age&quot;</span><span class="punctuation">:</span> <span class="number">18</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;jerry&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;age&quot;</span><span class="punctuation">:</span> <span class="number">16</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;total&quot;</span><span class="punctuation">:</span> <span class="number">2</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><b style="color:red;">特别注意：JSON是字符串，是文本</b>。JavaScript引擎可以将这种字符串解析成某种类型的数据。</p>
+<h3 id="json包"><a href="#json包" class="headerlink" title="json包"></a>json包</h3><p>Go语言标准库中提供了 encoding&#x2F;json 包，内部使用了反射技术，效率较为低下。</p>
+<p>参看官方文档：<a target="_blank" rel="noopener" href="https://go.dev/blog/json">https://go.dev/blog/json</a></p>
+<ul>
+<li><span style="background-color:gray">json.Marshal(v any) ([]byte, error)</span>，将v序列化成字节序列，这个过程为Encode。</li>
+<li><span style="background-color:gray">json.Unmarshal(data []byte, v any) error</span>，将字符序列data反序列化为v，这个过程为Decode。</li>
+</ul>
+<h4 id="基本类型序列化"><a href="#基本类型序列化" class="headerlink" title="基本类型序列化"></a>基本类型序列化</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="comment">// 序列化</span></span><br><span class="line">    <span class="keyword">var</span> data = []any&#123;</span><br><span class="line">        <span class="number">123</span>, <span class="string">&quot;abc&quot;</span>, <span class="literal">true</span>, <span class="literal">false</span>, <span class="literal">nil</span>, <span class="number">8.28</span>, <span class="comment">// Go语言的基本类型</span></span><br><span class="line">        [<span class="number">3</span>]<span class="type">int</span>&#123;<span class="number">1</span>, <span class="number">11</span>, <span class="number">111</span>&#125;,                 <span class="comment">// Go array ==&gt; JS array</span></span><br><span class="line">        []<span class="type">int</span>&#123;<span class="number">2</span>, <span class="number">22</span>, <span class="number">222</span>&#125;,                  <span class="comment">// Go slice ==&gt; JS array</span></span><br><span class="line">        <span class="keyword">map</span>[<span class="type">int</span>]<span class="type">string</span>&#123;<span class="number">1</span>: <span class="string">&quot;aaa&quot;</span>, <span class="number">2</span>: <span class="string">&quot;ccc&quot;</span>&#125;, <span class="comment">// Go map ==&gt; JS object strconv.Itoa(1)</span></span><br><span class="line">    &#125;</span><br><span class="line">    target := <span class="built_in">make</span>([][]<span class="type">byte</span>, <span class="number">0</span>, <span class="built_in">len</span>(data))</span><br><span class="line">    <span class="keyword">for</span> i, datum := <span class="keyword">range</span> data &#123; <span class="comment">// 一个个单独序列化，看变化</span></span><br><span class="line">        m, err := json.Marshal(datum) <span class="comment">// Marshal(v any) ([]byte, error) 是有两个返回值的</span></span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            fmt.Println(<span class="string">&quot;Error:&quot;</span>, err)</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        fmt.Printf(<span class="string">&quot;%d: %T %[2]v ==&gt; %T %[3]v, %s\n&quot;</span>, i, datum, m, <span class="type">string</span>(m))</span><br><span class="line">        target = <span class="built_in">append</span>(target, m)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// fmt.Println(target)</span></span><br><span class="line">    <span class="comment">// fmt.Println(json.Marshal(data)) // 这里也是可以对target、data进行序列化的</span></span><br><span class="line">    <span class="comment">// m, _ := json.Marshal(data) // 这里我将err的值就没有取，通过 _ 来接替它</span></span><br><span class="line">    <span class="comment">// fmt.Println(string(m)) // [123,&quot;abc&quot;,true,false,null,8.28,[1,11,111],[2,22,222],&#123;&quot;1&quot;:&quot;aaa&quot;,&quot;2&quot;:&quot;ccc&quot;&#125;]</span></span><br><span class="line">    fmt.Println(<span class="string">&quot;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 反序列化</span></span><br><span class="line">    <span class="keyword">for</span> i, bytes := <span class="keyword">range</span> target &#123; <span class="comment">// 一个一个字节序列单独反序列化，看结果</span></span><br><span class="line">        <span class="keyword">var</span> t any <span class="comment">// type any = interface&#123;&#125; 空接口类型</span></span><br><span class="line">        err := json.Unmarshal(bytes, &amp;t)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            fmt.Println(<span class="string">&quot;Error: &quot;</span>, err) <span class="comment">// error 接口默认不是调用Stringer的String方法，而是优先使用Error</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        fmt.Printf(<span class="string">&quot;%d: %T %[2]v ==&gt; %T %[3]v\n&quot;</span>, i, bytes, t)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上述代码运行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">序列化结果：</span><br><span class="line">0: int 123 ==&gt; []uint8 [49 50 51], 123         </span><br><span class="line">1: string abc ==&gt; []uint8 [34 97 98 99 34], <span class="string">&quot;abc&quot;</span></span><br><span class="line">2: bool <span class="literal">true</span> ==&gt; []uint8 [116 114 117 101], <span class="literal">true</span></span><br><span class="line">3: bool <span class="literal">false</span> ==&gt; []uint8 [102 97 108 115 101], <span class="literal">false</span></span><br><span class="line">4: &lt;nil&gt; &lt;nil&gt; ==&gt; []uint8 [110 117 108 108], null</span><br><span class="line">5: float64 8.28 ==&gt; []uint8 [56 46 50 56], 8.28 </span><br><span class="line">6: [3]int [1 11 111] ==&gt; []uint8 [91 49 44 49 49 44 49 49 49 93], [1,11,111]</span><br><span class="line">7: []int [2 22 222] ==&gt; []uint8 [91 50 44 50 50 44 50 50 50 93], [2,22,222]</span><br><span class="line">8: map[int]string map[1:aaa 2:ccc] ==&gt; []uint8 [123 34 49 34 58 34 97 97 97 34 44 34 50 34 58 34 99 99 99 34 125], &#123;<span class="string">&quot;1&quot;</span>:<span class="string">&quot;aaa&quot;</span>,<span class="string">&quot;2&quot;</span>:<span class="string">&quot;ccc&quot;</span>&#125;</span><br><span class="line"></span><br><span class="line">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span><br><span class="line"></span><br><span class="line">反序列化结果：</span><br><span class="line">0: []uint8 [49 50 51] ==&gt; float64 123</span><br><span class="line">1: []uint8 [34 97 98 99 34] ==&gt; string abc</span><br><span class="line">2: []uint8 [116 114 117 101] ==&gt; bool <span class="literal">true</span></span><br><span class="line">3: []uint8 [102 97 108 115 101] ==&gt; bool <span class="literal">false</span></span><br><span class="line">4: []uint8 [110 117 108 108] ==&gt; &lt;nil&gt; &lt;nil&gt;</span><br><span class="line">5: []uint8 [56 46 50 56] ==&gt; float64 8.28</span><br><span class="line">6: []uint8 [91 49 44 49 49 44 49 49 49 93] ==&gt; []interface &#123;&#125; [1 11 111]</span><br><span class="line">7: []uint8 [91 50 44 50 50 44 50 50 50 93] ==&gt; []interface &#123;&#125; [2 22 222]</span><br><span class="line">8: []uint8 [123 34 49 34 58 34 97 97 97 34 44 34 50 34 58 34 99 99 99 34 125] ==&gt; map[string]interface &#123;&#125; map[1:aaa 2:ccc]</span><br></pre></td></tr></table></figure>
+
+<p>从上述运行结果发现序列化后将各种类型序列化成了字节序列，也可以说转换成了字符串。剩下的就交给JS引擎吧。<strong>序列化转换的结果都是字符串</strong>。</p>
+<p>反序列化就是将前面序列化的字符串（字节序列）反序列化为Go的某类型数据。因为从浏览器发来的数据都是字符串。</p>
+<p>这里要注意的是在JSON字符串中，会将数值转换成Go的float64的类型，true、false会转成bool型，null的话会转成nil，字符串会转成string，数组会被转成[]interface{}。</p>
+<h4 id="结构体序列化"><a href="#结构体序列化" class="headerlink" title="结构体序列化"></a>结构体序列化</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Person <span class="keyword">struct</span> &#123;</span><br><span class="line">    Name <span class="type">string</span></span><br><span class="line">    Age  <span class="type">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="comment">// 序列化</span></span><br><span class="line">    data := Person&#123;<span class="string">&quot;Tom&quot;</span>, <span class="number">23</span>&#125;</span><br><span class="line">    b, err := json.Marshal(data)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%+v\n&quot;</span>, data)                 <span class="comment">// 这是Person实例</span></span><br><span class="line">    fmt.Printf(<span class="string">&quot;%T %[1]v %s\n&quot;</span>, b, <span class="type">string</span>(b)) <span class="comment">// 这里已经转换成字节序列了，可以理解为是字符串了</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 反序列化</span></span><br><span class="line">    b1 := []<span class="type">byte</span>(<span class="string">`&#123;&quot;Name&quot;:&quot;Tom&quot;,&quot;Age&quot;:23&#125;`</span>) <span class="comment">// 字符串，增加了些空格，js中的对象也就是键值对</span></span><br><span class="line">    <span class="keyword">var</span> p Person                            <span class="comment">// 指定目标类型</span></span><br><span class="line">    err = json.Unmarshal(b1, &amp;p)            <span class="comment">// 通过指针来填充结构体</span></span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%T %+[1]v\n&quot;</span>, p)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 不知道要转换的类型</span></span><br><span class="line">    <span class="keyword">var</span> t <span class="keyword">interface</span>&#123;&#125; <span class="comment">// 空接口类型 这里将interface&#123;&#125;换成any也是可以的，any是interface&#123;&#125;的一个别名</span></span><br><span class="line">    err = json.Unmarshal(b, &amp;t)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%T %+[1]v\n&quot;</span>, t) <span class="comment">// 这里的t是any类型的，这时就会被理解成键值对 map[string]interface &#123;&#125; map[Age:23 Name:Tom]</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="自定义类型的切片序列化"><a href="#自定义类型的切片序列化" class="headerlink" title="自定义类型的切片序列化"></a>自定义类型的切片序列化</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;encoding/json&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Person <span class="keyword">struct</span> &#123;</span><br><span class="line">    Name <span class="type">string</span></span><br><span class="line">    Age  <span class="type">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="comment">// 序列化</span></span><br><span class="line">    data := []Person&#123;</span><br><span class="line">        &#123;<span class="string">&quot;Tom&quot;</span>, <span class="number">23</span>&#125;,</span><br><span class="line">        &#123;<span class="string">&quot;Jerry&quot;</span>, <span class="number">30</span>&#125;,</span><br><span class="line">    &#125;</span><br><span class="line">    b, err := json.Marshal(data)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%+v\n&quot;</span>, data)                 <span class="comment">// 这是Person实例</span></span><br><span class="line">    fmt.Printf(<span class="string">&quot;%T %[1]v %s\n&quot;</span>, b, <span class="type">string</span>(b)) <span class="comment">// 这里已经转换成字节序列了，可以理解为是字符串了</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 反序列化</span></span><br><span class="line">    <span class="keyword">var</span> p []Person              <span class="comment">// 指定目标类型</span></span><br><span class="line">    err = json.Unmarshal(b, &amp;p) <span class="comment">// 通过指针来填充结构体</span></span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;1 %T %+[1]v\n&quot;</span>, p)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 不知道要转换的类型</span></span><br><span class="line">    <span class="keyword">var</span> t <span class="keyword">interface</span>&#123;&#125; <span class="comment">// 空接口类型 这里将interface&#123;&#125;换成any也是可以的，any是interface&#123;&#125;的一个别名</span></span><br><span class="line">    err = json.Unmarshal(b, &amp;t)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;2 %T %+[1]v\n&quot;</span>, t)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="字段标签设置"><a href="#字段标签设置" class="headerlink" title="字段标签设置"></a>字段标签设置</h4><p>结构体的字段可以增加标签tag，是在序列化、反序列化中使用。</p>
+<ul>
+<li>在字段类型后面，可以跟反引号引起来的一个标签，用json为key，value用双引号引起来写，key与value之间使用冒号，这个标签中不要加入多余的空格，否则会出现语法错误<ul>
+<li><span style="background-color:gray">Name string `json:”name”`</span>，这个示例序列化后得到的属性名为name<ul>
+<li>json表示json库使用</li>
+<li>双引号内第一个参数用来指定字段转换使用的名称，多个参数使用逗号隔开</li>
+</ul>
+</li>
+<li><span style="background-color:gray">Name string `json:”name,omitempty”`</span>，omitempty是指的为序列化时忽略空值，也就是该字段不序列化<ul>
+<li>空值为false、0、空数组、空切片、空map、空字符串、nil空指针、nil接口值</li>
+<li>空数组、空切片、空字符串、空map，长度len为0，也就是这些容器里面没有元素</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>如果使用了 - ，该字段就会被忽略<ul>
+<li><span style="background-color:gray">Name string `json:”-“`</span>，序列化后就会没有这个字段，反序列化时也不会转换该字段</li>
+<li><span style="background-color:gray">Name string `json:”-,”`</span>，序列化后该字段显示的名字为”-“，反序列化的话这时也会转换该字段</li>
+</ul>
+</li>
+<li>多标签使用空格间隔开<ul>
+<li><span style="background-color:gray">Name string `json:”name,omitempty” msgpack:”myname”`</span></li>
+</ul>
+</li>
+</ul>
+<p>JSON序列化的Go实现效率较低，因此社区和某些公司就提供了大量开源的实现，例如easyjson、jsoniter、sonic等等。可以到GitHub上查看相关项目，基本上使用的方法都是兼容官方实现的。</p>
+<h3 id="json-iterator"><a href="#json-iterator" class="headerlink" title="json-iterator"></a>json-iterator</h3><p>github地址：<a target="_blank" rel="noopener" href="https://github.com/json-iterator/go">https://github.com/json-iterator/go</a></p>
+<p>示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 下面包</span></span><br><span class="line">$ go get github.com/json-iterator/go</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    jsoniter <span class="string">&quot;github.com/json-iterator/go&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Person <span class="keyword">struct</span> &#123;</span><br><span class="line">    Name <span class="type">string</span></span><br><span class="line">    Age  <span class="type">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="comment">// 序列化</span></span><br><span class="line">    <span class="keyword">var</span> p = Person&#123;<span class="string">&quot;Tom&quot;</span>, <span class="number">23</span>&#125;</span><br><span class="line">    b, err := jsoniter.Marshal(p)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%T %+[1]v %s\n&quot;</span>, b, <span class="type">string</span>(b))</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 反序列化</span></span><br><span class="line">    <span class="keyword">var</span> p1 Person</span><br><span class="line">    err = jsoniter.Unmarshal(b, &amp;p1)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%T %+[1]v\n&quot;</span>, p1)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="MessagePack"><a href="#MessagePack" class="headerlink" title="MessagePack"></a>MessagePack</h3><p>MessagePack是一个基于二进制高效的对象序列化类库，支持跨语言通信，它可以像JSON那样，在许多语言之间蒋欢结构对象，它比JSON更快更轻便，支持多种语言。宣称比Google Protocol Buffers还要快4倍 。</p>
+<p>官网：<a target="_blank" rel="noopener" href="https://msgpack.org/">https://msgpack.org/</a></p>
+<p>文档：<a target="_blank" rel="noopener" href="https://msgpack.uptrace.dev/">https://msgpack.uptrace.dev/</a></p>
+<p>安装:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ go get github.com/vmihailenco/msgpack/v5</span><br></pre></td></tr></table></figure>
+
+<p>示例：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;github.com/vmihailenco/msgpack/v5&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Person <span class="keyword">struct</span> &#123;</span><br><span class="line">    Name <span class="type">string</span> <span class="string">`json:&quot;name&quot; msgpack:&quot;myname&quot;`</span>                   <span class="comment">// 双引号第一参数是字段名,多个参数用逗号隔开，多标签的话使用空格间隔</span></span><br><span class="line">    Age  <span class="type">int</span>    <span class="string">`json:&quot;age,omitempty&quot; msgpack:&quot;myage,omitempty&quot;`</span> <span class="comment">// omitempty忽略空值</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="comment">// 序列化</span></span><br><span class="line">    data := []Person&#123;</span><br><span class="line">        &#123;<span class="string">&quot;Tom&quot;</span>, <span class="number">23</span>&#125;,</span><br><span class="line">        &#123;<span class="string">&quot;Jerry&quot;</span>, <span class="number">45</span>&#125;,</span><br><span class="line">    &#125;</span><br><span class="line">    b, err := msgpack.Marshal(data)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%T %[1]v %d %s\n&quot;</span>, b, <span class="built_in">len</span>(b), <span class="type">string</span>(b)) <span class="comment">// 二进制</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 反序列化</span></span><br><span class="line">    <span class="keyword">var</span> p []Person                 <span class="comment">// 指定目标类型</span></span><br><span class="line">    err = msgpack.Unmarshal(b, &amp;p) <span class="comment">// 通过指针来填充结构体</span></span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="built_in">panic</span>(err)</span><br><span class="line">    &#125;</span><br><span class="line">    fmt.Printf(<span class="string">&quot;%T %+[1]v\n&quot;</span>, p)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://atuhf.github.io/">G.</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://atuhf.github.io/post/24787617.html">https://atuhf.github.io/post/24787617.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://atuhf.github.io" target="_blank">G.のblog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Golang/">Golang</a></div><div class="post_share"><div class="social-share" data-image="/img/golang.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i>赞助</div><div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/img/wechat.png" target="_blank"><img class="post-qr-code-img" src="/img/wechat.png" alt="wechat"/></a><div class="post-qr-code-desc">wechat</div></li><li class="reward-item"><a href="/img/alipay.png" target="_blank"><img class="post-qr-code-img" src="/img/alipay.png" alt="alipay"/></a><div class="post-qr-code-desc">alipay</div></li></ul></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-full"><a href="/post/695700aa.html" title="Golang的面向对象"><img class="cover" src="/img/golang.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Golang的面向对象</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/post/e388ed3e.html" title="Golang分支循环与随机数"><img class="cover" src="/img/golang.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-02-11</div><div class="title">Golang分支循环与随机数</div></div></a></div><div><a href="/post/50cf42f9.html" title="Golang字符串"><img class="cover" src="/img/golang.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-02-12</div><div class="title">Golang字符串</div></div></a></div><div><a href="/post/f56d4cea.html" title="Golang线性表-数组、切片"><img class="cover" src="/img/golang.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-02-11</div><div class="title">Golang线性表-数组、切片</div></div></a></div><div><a href="/post/29419984.html" title="Golang哈希表与排序"><img class="cover" src="/img/golang.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-02-12</div><div class="title">Golang哈希表与排序</div></div></a></div><div><a href="/post/1e8911bc.html" title="Golang-列表list"><img class="cover" src="/img/golang.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-02-18</div><div class="title">Golang-列表list</div></div></a></div><div><a href="/post/37de5a20.html" title="Golang函数"><img class="cover" src="/img/golang.png" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2023-02-18</div><div class="title">Golang函数</div></div></a></div></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="twikoo-wrap"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/touxiang.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">G.</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">59</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">13</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">14</div></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%BA%8F%E5%88%97%E5%8C%96%E4%B8%8E%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96"><span class="toc-number">1.</span> <span class="toc-text">序列化与反序列化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89"><span class="toc-number">1.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JSON"><span class="toc-number">1.2.</span> <span class="toc-text">JSON</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#JSON%E7%9A%84%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="toc-number">1.2.1.</span> <span class="toc-text">JSON的数据类型</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%80%BC"><span class="toc-number">1.2.1.1.</span> <span class="toc-text">值</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="toc-number">1.2.1.2.</span> <span class="toc-text">字符串</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%B0%E5%80%BC"><span class="toc-number">1.2.1.3.</span> <span class="toc-text">数值</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AF%B9%E8%B1%A1"><span class="toc-number">1.2.1.4.</span> <span class="toc-text">对象</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%B0%E7%BB%84"><span class="toc-number">1.2.1.5.</span> <span class="toc-text">数组</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#json%E5%8C%85"><span class="toc-number">1.2.2.</span> <span class="toc-text">json包</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E7%B1%BB%E5%9E%8B%E5%BA%8F%E5%88%97%E5%8C%96"><span class="toc-number">1.2.2.1.</span> <span class="toc-text">基本类型序列化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BB%93%E6%9E%84%E4%BD%93%E5%BA%8F%E5%88%97%E5%8C%96"><span class="toc-number">1.2.2.2.</span> <span class="toc-text">结构体序列化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%88%87%E7%89%87%E5%BA%8F%E5%88%97%E5%8C%96"><span class="toc-number">1.2.2.3.</span> <span class="toc-text">自定义类型的切片序列化</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AD%97%E6%AE%B5%E6%A0%87%E7%AD%BE%E8%AE%BE%E7%BD%AE"><span class="toc-number">1.2.2.4.</span> <span class="toc-text">字段标签设置</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#json-iterator"><span class="toc-number">1.2.3.</span> <span class="toc-text">json-iterator</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MessagePack"><span class="toc-number">1.2.4.</span> <span class="toc-text">MessagePack</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/post/24787617.html" title="Golang的序列化与反序列化"><img src="/img/golang.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Golang的序列化与反序列化"/></a><div class="content"><a class="title" href="/post/24787617.html" title="Golang的序列化与反序列化">Golang的序列化与反序列化</a><time datetime="2023-03-05T02:45:11.000Z" title="发表于 2023-03-05 10:45:11">2023-03-05</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/695700aa.html" title="Golang的面向对象"><img src="/img/golang.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Golang的面向对象"/></a><div class="content"><a class="title" href="/post/695700aa.html" title="Golang的面向对象">Golang的面向对象</a><time datetime="2023-03-04T02:44:32.000Z" title="发表于 2023-03-04 10:44:32">2023-03-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/80afc9b1.html" title="Golang的错误处理"><img src="/img/golang.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Golang的错误处理"/></a><div class="content"><a class="title" href="/post/80afc9b1.html" title="Golang的错误处理">Golang的错误处理</a><time datetime="2023-02-26T02:44:09.000Z" title="发表于 2023-02-26 10:44:09">2023-02-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/3b0665f1.html" title="Golang接口-interface"><img src="/img/golang.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Golang接口-interface"/></a><div class="content"><a class="title" href="/post/3b0665f1.html" title="Golang接口-interface">Golang接口-interface</a><time datetime="2023-02-25T06:33:45.000Z" title="发表于 2023-02-25 14:33:45">2023-02-25</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/post/1b3acd2d.html" title="Golang结构体"><img src="/img/golang.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Golang结构体"/></a><div class="content"><a class="title" href="/post/1b3acd2d.html" title="Golang结构体">Golang结构体</a><time datetime="2023-02-25T02:32:59.000Z" title="发表于 2023-02-25 10:32:59">2023-02-25</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url('/img/background.png')"><div id="footer-wrap"><div class="copyright">&copy;2022 - 2023  <i id="heartbeat" class="fa fas fa-heartbeat"></i> G.</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/HCLonely/images@master/others/heartbeat.min.css"></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div id="rightMenu"><div class="rightMenu-group rightMenu-small"><div class="rightMenu-item" id="menu-backward"><i class="fa-solid fa-arrow-left"></i></div><div class="rightMenu-item" id="menu-forward"><i class="fa-solid fa-arrow-right"></i></div><div class="rightMenu-item" id="menu-refresh"><i class="fa-solid fa-arrow-rotate-right"></i></div><div class="rightMenu-item" id="menu-home"><i class="fa-solid fa-house"></i></div></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item menu-link" href="/archives/"><i class="fa-solid fa-archive"></i><span>文章归档</span></a><a class="rightMenu-item menu-link" href="/categories/"><i class="fa-solid fa-folder-open"></i><span>文章分类</span></a><a class="rightMenu-item menu-link" href="/tags/"><i class="fa-solid fa-tags"></i><span>文章标签</span></a></div><div class="rightMenu-group rightMenu-line rightMenuNormal"><a class="rightMenu-item menu-link" id="menu-radompage" href="/random/index.html"><i class="fa-solid fa-shoe-prints"></i><span>随便逛逛</span></a><div class="rightMenu-item" id="menu-translate"><i class="fa-solid fa-earth-asia"></i><span>繁简切换</span></div><div class="rightMenu-item" id="menu-darkmode"><i class="fa-solid fa-moon"></i><span>切换模式</span></div></div></div><div id="rightmenu-mask"></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>(() => {
+  const init = () => {
+    twikoo.init(Object.assign({
+      el: '#twikoo-wrap',
+      envId: 'https://my-twikoo-nine-xi.vercel.app/',
+      region: 'ap-shenzhen',
+      onCommentLoaded: () => {
+        btf.loadLightbox(document.querySelectorAll('#twikoo .tk-content img:not(.tk-owo-emotion)'))
+      }
+    }, null))
+  }
+
+  const loadTwikoo = () => {
+    if (typeof twikoo === 'object') setTimeout(init,0)
+    else getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(init)
+  }
+
+  const getCount = () => {
+    const countELement = document.getElementById('twikoo-count')
+    if(!countELement) return
+    twikoo.getCommentsCount({
+      envId: 'https://my-twikoo-nine-xi.vercel.app/',
+      region: 'ap-shenzhen',
+      urls: [window.location.pathname],
+      includeReply: false
+    }).then(res => {
+      countELement.textContent = res[0].count
+    }).catch(err => {
+      console.error(err)
+    })
+  }
+
+  if ('Twikoo' === 'Twikoo' || !false) {
+    if (false) btf.loadComment(document.getElementById('twikoo-wrap'), loadTwikoo)
+    else {
+      loadTwikoo()
+      
+    }
+  } else {
+    window.loadOtherComment = loadTwikoo
+  }
+})()</script></div><script>window.addEventListener('load', () => {
+  const changeContent = (content) => {
+    if (content === '') return content
+
+    content = content.replace(/<img.*?src="(.*?)"?[^\>]+>/ig, '[图片]') // replace image link
+    content = content.replace(/<a[^>]+?href=["']?([^"']+)["']?[^>]*>([^<]+)<\/a>/gi, '[链接]') // replace url
+    content = content.replace(/<pre><code>.*?<\/pre>/gi, '[代码]') // replace code
+    content = content.replace(/<[^>]+>/g,"") // remove html tag
+
+    if (content.length > 150) {
+      content = content.substring(0,150) + '...'
+    }
+    return content
+  }
+
+  const getComment = () => {
+    const runTwikoo = () => {
+      twikoo.getRecentComments({
+        envId: 'https://my-twikoo-nine-xi.vercel.app/',
+        region: 'ap-shenzhen',
+        pageSize: 6,
+        includeReply: true
+      }).then(function (res) {
+        const twikooArray = res.map(e => {
+          return {
+            'content': changeContent(e.comment),
+            'avatar': e.avatar,
+            'nick': e.nick,
+            'url': e.url + '#' + e.id,
+            'date': new Date(e.created).toISOString()
+          }
+        })
+
+        saveToLocal.set('twikoo-newest-comments', JSON.stringify(twikooArray), 10/(60*24))
+        generateHtml(twikooArray)
+      }).catch(function (err) {
+        const $dom = document.querySelector('#card-newest-comments .aside-list')
+        $dom.textContent= "无法获取评论，请确认相关配置是否正确"
+      })
+    }
+
+    if (typeof twikoo === 'object') {
+      runTwikoo()
+    } else {
+      getScript('https://cdn.jsdelivr.net/npm/twikoo/dist/twikoo.all.min.js').then(runTwikoo)
+    }
+  }
+
+  const generateHtml = array => {
+    let result = ''
+
+    if (array.length) {
+      for (let i = 0; i < array.length; i++) {
+        result += '<div class=\'aside-list-item\'>'
+
+        if (true) {
+          const name = 'src'
+          result += `<a href='${array[i].url}' class='thumbnail'><img ${name}='${array[i].avatar}' alt='${array[i].nick}'></a>`
+        }
+        
+        result += `<div class='content'>
+        <a class='comment' href='${array[i].url}' title='${array[i].content}'>${array[i].content}</a>
+        <div class='name'><span>${array[i].nick} / </span><time datetime="${array[i].date}">${btf.diffDate(array[i].date, true)}</time></div>
+        </div></div>`
+      }
+    } else {
+      result += '没有评论'
+    }
+
+    let $dom = document.querySelector('#card-newest-comments .aside-list')
+    $dom.innerHTML= result
+    window.lazyLoadInstance && window.lazyLoadInstance.update()
+    window.pjax && window.pjax.refresh($dom)
+  }
+
+  const newestCommentInit = () => {
+    if (document.querySelector('#card-newest-comments .aside-list')) {
+      const data = saveToLocal.get('twikoo-newest-comments')
+      if (data) {
+        generateHtml(JSON.parse(data))
+      } else {
+        getComment()
+      }
+    }
+  }
+
+  newestCommentInit()
+  document.addEventListener('pjax:complete', newestCommentInit)
+})</script><div class="aplayer no-destroy" data-id="3778678" data-server="netease" data-type="playlist" data-fixed="true" data-mini="true" data-listFolded="false" data-order="random" data-lrctype="1" data-preload="none" data-autoplay="true" muted></div><script defer src="https://npm.elemecdn.com/jquery@latest/dist/jquery.min.js"></script><canvas id="universe"></canvas><script defer src="/js/universe.js"></script><script data-pjax defer src="https://npm.elemecdn.com/tzy-blog/lib/js/theme/chocolate.js"></script><script defer data-pjax src="/js/rightMenu.js"></script><script id="click-show-text" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-show-text.min.js" data-mobile="false" data-text="I,LOVE,P,X,T" data-fontsize="15px" data-random="false" async="async"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"]):not([href="/music/"]):not([href="/no-pjax/"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener
+  btf.removeGlobalFnEvent('pjax')
+  btf.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+  typeof disqusjs === 'object' && disqusjs.destroy()
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div><!-- hexo injector body_end start --><script data-pjax>
+  function butterfly_clock_anzhiyu_injector_config(){
+    var parent_div_git = document.getElementsByClassName('sticky_layout')[0];
+    var item_html = '<div class="card-widget card-clock"><div class="card-glass"><div class="card-background"><div class="card-content"><div id="hexo_electric_clock"><img class="entered loading" id="card-clock-loading" src="https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/loading.gif" style="height: 120px; width: 100%;" data-ll-status="loading"/></div></div></div></div></div>';
+    console.log('已挂载butterfly_clock_anzhiyu')
+    if(parent_div_git) {
+      parent_div_git.insertAdjacentHTML("afterbegin",item_html)
+    }
+  }
+  var elist = 'null'.split(',');
+  var cpage = location.pathname;
+  var epage = 'all';
+  var qweather_key = '09f915900ec44da8a9acab8475ea6585';
+  var gaud_map_key = '03a58066d1a8fbaf5afcfee59fff134c';
+  var baidu_ak_key = 'undefined';
+  var flag = 0;
+  var clock_rectangle = '112.982279,28.19409';
+  var clock_default_rectangle_enable = 'false';
+
+  for (var i=0;i<elist.length;i++){
+    if (cpage.includes(elist[i])){
+      flag++;
+    }
+  }
+
+  if ((epage ==='all')&&(flag == 0)){
+    butterfly_clock_anzhiyu_injector_config();
+  }
+  else if (epage === cpage){
+    butterfly_clock_anzhiyu_injector_config();
+  }
+  </script><script src="https://widget.qweather.net/simple/static/js/he-simple-common.js?v=2.0"></script><script data-pjax src="https://cdn.cbd.int/hexo-butterfly-clock-anzhiyu/lib/clock.min.js"></script><!-- hexo injector body_end end --><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"tagMode":false,"debug":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":150,"height":300,"hOffset":20,"vOffset":-20},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/"});</script></body></html>
