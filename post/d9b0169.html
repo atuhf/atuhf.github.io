@@ -54,9 +54,9 @@
   title: 'MySQL性能调优',
   isPost: true,
   isHome: false,
-  isHighlightShrink: true,
+  isHighlightShrink: false,
   isToc: true,
-  postUpdate: '2024-04-23 16:06:35'
+  postUpdate: '2024-04-23 16:20:11'
 }</script><script>(win=>{
       win.saveToLocal = {
         set: (key, value, ttl) => {
@@ -197,37 +197,37 @@
 <ol>
 <li>增加监听队列上限：</li>
 </ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">net.core.somaxconn = 65535</span><br><span class="line">net.core.netdev_max_backlog = 262144</span><br><span class="line">net.ipv4.tcp_max_syn_backlog = 262144</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">net.core.somaxconn = 65535</span><br><span class="line">net.core.netdev_max_backlog = 262144</span><br><span class="line">net.ipv4.tcp_max_syn_backlog = 262144</span><br></pre></td></tr></table></figure>
 
 <ol start="2">
 <li>加快TCP连接的回收：</li>
 </ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">net.ipv4.tcp_fin_timeout = 5</span><br><span class="line">net.ipv4.tcp_tw_reuse = 1</span><br><span class="line">net.ipv4.tcp_tw_recycle = 1</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_fin_timeout = 5</span><br><span class="line">net.ipv4.tcp_tw_reuse = 1</span><br><span class="line">net.ipv4.tcp_tw_recycle = 1</span><br></pre></td></tr></table></figure>
 
 <ol start="3">
 <li>TCP连接接收和发送缓冲区大小的默认值和最大值:</li>
 </ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">net.core.wmem_default = 8388608c</span><br><span class="line">net.core.wmem_max = 16777216</span><br><span class="line">net.core.rmem_default = 8388608</span><br><span class="line">net.core.rmem_max = 16777216</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">net.core.wmem_default = 8388608c</span><br><span class="line">net.core.wmem_max = 16777216</span><br><span class="line">net.core.rmem_default = 8388608</span><br><span class="line">net.core.rmem_max = 16777216</span><br></pre></td></tr></table></figure>
 
 <ol start="4">
 <li>减少失效连接所占用的TCP资源的数量，加快资源回收的效率：</li>
 </ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">net.ipv4.tcp_keepalive_time = 300</span><br><span class="line">net.ipv4.tcp_keepalive_intvl = 30</span><br><span class="line">net.ipv4.tcp_keepalive_probes = 3</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">net.ipv4.tcp_keepalive_time = 300</span><br><span class="line">net.ipv4.tcp_keepalive_intvl = 30</span><br><span class="line">net.ipv4.tcp_keepalive_probes = 3</span><br></pre></td></tr></table></figure>
 
 <ol start="5">
 <li>单个共享内存段的最大值：</li>
 </ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">kernel.shmmax = 68719476735</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kernel.shmmax = 68719476735</span><br></pre></td></tr></table></figure>
 
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">1、这个参数应该设置的足够大，以便能在一个共享内存段下容纳整个的Innodb缓冲池的大小。</span><br><span class="line">2、这个值的大小对于64位linux系统，可取的最大值为(物理内存值-1)byte，建议值为大于物理内存的一半，一般取值大于Innodb缓冲池的大小即可。</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1、这个参数应该设置的足够大，以便能在一个共享内存段下容纳整个的Innodb缓冲池的大小。</span><br><span class="line">2、这个值的大小对于64位linux系统，可取的最大值为(物理内存值-1)byte，建议值为大于物理内存的一半，一般取值大于Innodb缓冲池的大小即可。</span><br></pre></td></tr></table></figure>
 
 <ol start="6">
 <li>控制换出运行时内存的相对权重：</li>
 </ol>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">vm.swappiness = 0</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vm.swappiness = 0</span><br></pre></td></tr></table></figure>
 
 <p>这个参数当内存不足的时候会对性能产生比较明显的影响。（设置为0，是表示Linux内核虚拟内存完全被占用，才会要使用交换区。）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Linux系统内存交换区：</span><br><span class="line">在Linux系统安装时都会有一个特殊的磁盘分区，称之为系统交换分区。</span><br><span class="line">使用 free -m 命令可以看到swap就是内存交换区。</span><br><span class="line">作用：当操作系统没有足够的内存时，就会将部分虚拟内存写到磁盘的交换区中，这样就会发生内存交换</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Linux系统内存交换区：</span><br><span class="line">在Linux系统安装时都会有一个特殊的磁盘分区，称之为系统交换分区。</span><br><span class="line">使用 free -m 命令可以看到swap就是内存交换区。</span><br><span class="line">作用：当操作系统没有足够的内存时，就会将部分虚拟内存写到磁盘的交换区中，这样就会发生内存交换</span><br></pre></td></tr></table></figure>
 
 <p>如果Linux系统上完全禁止交换分区的话，带来的风险：</p>
 <ol>
@@ -235,29 +235,29 @@
 <li>容易造成内存的溢出，崩溃，或有些程序被操作系统kill掉了</li>
 </ol>
 <h3 id="增加资源限制（-etc-security-limits-conf）"><a href="#增加资源限制（-etc-security-limits-conf）" class="headerlink" title="增加资源限制（&#x2F;etc&#x2F;security&#x2F;limits.conf）"></a>增加资源限制（&#x2F;etc&#x2F;security&#x2F;limits.conf）</h3><p>在limits.conf文件的末尾加上下面参数，打开文件数的限制。</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">*     soft   nofile   1000000</span><br><span class="line">*     hard   nofile   1000000</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">*     soft   nofile   1000000</span><br><span class="line">*     hard   nofile   1000000</span><br></pre></td></tr></table></figure>
 
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">*：表示对所有用户有效</span><br><span class="line">soft：表示当前系统生效的设置（soft不能大于hard ）</span><br><span class="line">hard：表明系统中所能设定的最大值</span><br><span class="line">nofile：表示所限制的资源是打开文件的最大数目</span><br><span class="line">1000000：限制的数量</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">*：表示对所有用户有效</span><br><span class="line">soft：表示当前系统生效的设置（soft不能大于hard ）</span><br><span class="line">hard：表明系统中所能设定的最大值</span><br><span class="line">nofile：表示所限制的资源是打开文件的最大数目</span><br><span class="line">1000000：限制的数量</span><br></pre></td></tr></table></figure>
 
 <p><strong><span style="color: red;">注意：这个文件的修改是需要重启系统才会生效的。</span></strong></p>
 <h2 id="MySQL的参数配置"><a href="#MySQL的参数配置" class="headerlink" title="MySQL的参数配置"></a>MySQL的参数配置</h2><p>mysql参数介绍（客户端中执行），尽量只修改session级别的参数。</p>
 <p>全局参数（新连接的session才会生效，原有已经连接的session不生效）</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set global 参数名=参数值;</span><br><span class="line">set @@global.参数名 :=参数值;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set global 参数名=参数值;</span><br><span class="line">set @@global.参数名 :=参数值;</span><br></pre></td></tr></table></figure>
 
 <p>会话参数</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">set [session] 参数名=参数值;</span><br><span class="line">set @@session.参数名 :=参数值;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">set [session] 参数名=参数值;</span><br><span class="line">set @@session.参数名 :=参数值;</span><br></pre></td></tr></table></figure>
 
 <h3 id="内存配置相关参数"><a href="#内存配置相关参数" class="headerlink" title="内存配置相关参数"></a>内存配置相关参数</h3><ul>
 <li>确定可以使用的内存上限</li>
 <li>确定mysql每个连接使用的内存</li>
 </ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sort_buffer_size：需要注意，每个连接分配指定大小的内存；</span><br><span class="line"> </span><br><span class="line">join_buffer_size；</span><br><span class="line"> </span><br><span class="line">read_buffer_size；</span><br><span class="line"> </span><br><span class="line">read_rnd_buffer_size。</span><br><span class="line"> </span><br><span class="line">上述都为每个进程分别进行设置，所以要注意配置大小。</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">sort_buffer_size：需要注意，每个连接分配指定大小的内存；</span><br><span class="line"> </span><br><span class="line">join_buffer_size；</span><br><span class="line"> </span><br><span class="line">read_buffer_size；</span><br><span class="line"> </span><br><span class="line">read_rnd_buffer_size。</span><br><span class="line"> </span><br><span class="line">上述都为每个进程分别进行设置，所以要注意配置大小。</span><br></pre></td></tr></table></figure>
 
 <ul>
 <li>确定需要为操作系统保留多少内存</li>
 <li>如何为缓存池分配内存</li>
 </ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Innodb_buffer_pool_size：总内存 - (每个线程所需内存 * 连接数) - 系统保留内存</span><br><span class="line"> </span><br><span class="line">key_buffer_size：主要用于myisam引擎</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Innodb_buffer_pool_size：总内存 - (每个线程所需内存 * 连接数) - 系统保留内存</span><br><span class="line"> </span><br><span class="line">key_buffer_size：主要用于myisam引擎</span><br></pre></td></tr></table></figure>
 
 <h3 id="IO相关配置参数"><a href="#IO相关配置参数" class="headerlink" title="IO相关配置参数"></a>IO相关配置参数</h3><p>Innodb I&#x2F;O相关配置</p>
 <ul>
@@ -265,13 +265,13 @@
 <li>Innodb_log_files_in_group：日志文件的个数</li>
 </ul>
 <p>事务日志总大小：</p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Innodb_log_files_in_group * Innodb_log_file_size</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Innodb_log_files_in_group * Innodb_log_file_size</span><br></pre></td></tr></table></figure>
 
 <ul>
 <li>Innodb_log_buffer_size：日志缓冲区大小</li>
 <li>Innodb_flush_log_at_trx_commit：日志刷新的频率</li>
 </ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">0：每秒进行一次log写入cache，并flush log到磁盘。如果mysql关闭或重启会导致至少1秒日志的丢失。</span><br><span class="line"> </span><br><span class="line">1：『默认』，在每次事务提交执行log写入cache，并flush log到磁盘。保证不会导致事务日志的丢失。</span><br><span class="line"> </span><br><span class="line">2：【建议】，每次事务提交，执行log数据写入到cache。每秒执行一次flush log到磁盘。</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0：每秒进行一次log写入cache，并flush log到磁盘。如果mysql关闭或重启会导致至少1秒日志的丢失。</span><br><span class="line"> </span><br><span class="line">1：『默认』，在每次事务提交执行log写入cache，并flush log到磁盘。保证不会导致事务日志的丢失。</span><br><span class="line"> </span><br><span class="line">2：【建议】，每次事务提交，执行log数据写入到cache。每秒执行一次flush log到磁盘。</span><br></pre></td></tr></table></figure>
 
 <ul>
 <li>Innodb_flush_method&#x3D;O_DIRECT：Innodb刷新的方式。</li>
@@ -282,7 +282,7 @@
 <ul>
 <li>delay_key_write</li>
 </ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">OFF：每次写操作后刷新新建缓冲区的脏块到磁盘</span><br><span class="line">ON：只对建表是指定了delay_key_write选项的表使用延迟刷新。</span><br><span class="line">ALL：对所有MYISAM表使用延迟键写入。会导致表损坏，使用相关命令进行修复。</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">OFF：每次写操作后刷新新建缓冲区的脏块到磁盘</span><br><span class="line">ON：只对建表是指定了delay_key_write选项的表使用延迟刷新。</span><br><span class="line">ALL：对所有MYISAM表使用延迟键写入。会导致表损坏，使用相关命令进行修复。</span><br></pre></td></tr></table></figure>
 
 <h3 id="安全相关配置参数"><a href="#安全相关配置参数" class="headerlink" title="安全相关配置参数"></a>安全相关配置参数</h3><ul>
 <li>expire_logs_days指定自动清理binlog的天数</li>
@@ -293,7 +293,7 @@
 <li>skip_slave_start警用slave自动恢复，（从服务器中进行配置）</li>
 <li>sql_mode设置mysql所使用的sql模式。（建议不要在生产换环境中调整这个值，有可能会导致系统不可用）</li>
 </ul>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">strict_trans_tables</span><br><span class="line"> </span><br><span class="line">no_engine_subtitution</span><br><span class="line"> </span><br><span class="line">no_zero_date</span><br><span class="line"> </span><br><span class="line">no_zero_in_date</span><br><span class="line"> </span><br><span class="line">only_full_group_by：select字句需要全部列出group by字段，否则报错。</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">strict_trans_tables</span><br><span class="line"> </span><br><span class="line">no_engine_subtitution</span><br><span class="line"> </span><br><span class="line">no_zero_date</span><br><span class="line"> </span><br><span class="line">no_zero_in_date</span><br><span class="line"> </span><br><span class="line">only_full_group_by：select字句需要全部列出group by字段，否则报错。</span><br></pre></td></tr></table></figure>
 
 
 <h3 id="其他常用的配置参数"><a href="#其他常用的配置参数" class="headerlink" title="其他常用的配置参数"></a>其他常用的配置参数</h3><ul>
